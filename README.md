@@ -20,6 +20,7 @@ All other files are designed as modules which can be called into \_\_main__.py u
 7. Non\_negative\_matrix_factorization.py
 
 **Following are standalone codes that have not been linked to the problem yet, but will come in handy later. Consequently, I am yet to add comments to these file and/or clean up their code.**
+
 1. Low\_rank_approximation.py
 2. Principal\_component_analysis.py
 
