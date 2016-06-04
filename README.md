@@ -1,6 +1,8 @@
 # traffic-study
 Project with Prof. Sowers studying the traffic data of NYC taxis, provided by Prof. Work.
+
 Project partner: Derrek Yager.
+
 Institute name: University of Illinois at Urbana Champaign. Department of Mathematics.
 
 Work commenced May 2016.
