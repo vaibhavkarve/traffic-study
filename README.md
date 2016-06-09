@@ -12,8 +12,8 @@ All other files are designed as modules which can be called into \_\_main__.py u
 
 ###Order in which the codes should be run:
 1. Link\_data_extraction.py (extracts from database, lines corresponding to specific link)
-2. Data_matrix.py (all the key functions relating to the data matrix)
-3. Traveltimes\_and\_trips_extraction.py
+2. Traveltimes\_and\_trips_extraction.py
+3. Data_matrix.py (all the key functions relating to the data matrix)
 4. Periodicity_analysis.py
 5. Autocorrelation.py
 6. Daily_trends.py
