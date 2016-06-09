@@ -5,7 +5,9 @@
 2. data_matrix_create does what data_list_create does, but stores data into a
     matrix (of type array) by imposing a periodicity on the data.
     Input = name of readfile, period (in days)
-    Output = array of size ()
+    Output = array of size (24*PERIOD, len(data)/(24.*PERIOD)) (corrected for
+            note).
+    See important note in definition! 
 3. replace_placeholder replaces all entries of value placeholder in a
     list/ndarray with a specified value.
     Input = list or ndarray, placeholder (default=nan), value
@@ -47,7 +49,11 @@ def data_matrix_create(readfilename = './Data_Files/Trips_AC_2011.txt',
     while len(data)%(24*PERIOD) != 0:
         data.append(nan)
     data = array(data).reshape(len(data)/(24.*PERIOD), 24*PERIOD)
-    return data
+    # Important note: Originally, we were returning the matrix data. Now, in
+    # light of calculations we have to do in the future (especially NMF), we are
+    # returning data.T. All programs henceforth have been changed to accomodate
+    # this change.
+    return data.T
 
 
 def replace_placeholder(data, placeholder = nan, value = 0):
@@ -69,19 +75,17 @@ def replace_placeholder(data, placeholder = nan, value = 0):
 
 
 def matrix_derivative(data):
-    data = array(data)
-    data_T = data.T     # We want column-wise derivative.
+    data = array(data)     # We want row-wise derivative.
     difference = []
-    for i in range(len(data_T)-1):
-        difference.append(data_T[i+1]-data_T[i])
-    return array(difference).T
+    for i in range(len(data)-1):
+        difference.append(data[i+1]-data[i])
+    return array(difference)
 
 
 def matrix_integrate(data, initial_vector):
     data = array(data)
-    initial_vector = list(initial_vector)
-    data_T = data.T     # We want column-wise integration
+    initial_vector = list(initial_vector) # We want row-wise integration
     integration = [initial_vector]
-    for i in range(len(data_T)):
-        integration.append(integration[i] + data_T[i])
-    return array(integration).T
+    for i in range(len(data)):
+        integration.append(integration[i] + data[i])
+    return array(integration)

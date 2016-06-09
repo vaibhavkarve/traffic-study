@@ -1,10 +1,9 @@
-from matplotlib.pyplot import show
-from Data_matrix import data_matrix_create
-from Daily_trends import daily_trends
-from Non_negative_matrix_factorization import NMF, NMF_plot
+from Data_matrix import *
+from Daily_trends import *
+from Non_negative_matrix_factorization import*
 
-data = data_matrix_create()
-for day_index in range(7):
-    daily_trends(data,day_index)
-    NMF_plot(data, day=day_index)
-    show()
+from matplotlib.pyplot import *
+
+data = data_matrix_create('./Data_Files/Traveltimes_AC_2011.txt')
+W, H = NMF(data)
+print data.shape, W.shape, H.shape

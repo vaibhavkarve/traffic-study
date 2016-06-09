@@ -26,8 +26,6 @@ from Data_matrix import replace_placeholder
 def NMF(data, RANK=1):
     data = array(data)
     data = replace_placeholder(data, value = 0)
-    # Work with transpose. Important.
-    data = data.T
     # Initialize to random matrices. It is important to not have any symmetry
     # in the initializations as this would impose an unwitting symmetry on the
     # factors.
@@ -41,7 +39,7 @@ def NMF(data, RANK=1):
     # multiply() represents term-by-term product of two matrices of equal
     # dimensions.
     # multiply(a,b)[i,j] = a[i,j]*b[i,j].
-    for iterations in range(5):
+    for iterations in range(10):
         Term_1 = dot(data, H.T)
         Term_2 = dot(W, dot(H, H.T))
         W = multiply(multiply(W,Term_1), 1./Term_2)
@@ -50,11 +48,11 @@ def NMF(data, RANK=1):
         Term_4 = dot(dot(W.T, W), H)
         H = multiply(multiply(H,Term_3), 1./Term_4)
         # Following is the error term, which is derived from the matrix norm.
-        print sum(multiply(data - dot(W,H), data - dot(W,H)))
+        #print sum(multiply(data - dot(W,H), data - dot(W,H)))
     return array(W), array(H)
 
 def NMF_plot(data, RANK = 1, day = 0):
     W, H = NMF(data, RANK)
     plot(W[day*24 : (day+1)*24],'ko-')
-    #plot(sum(W[24*i:24*(i+1)], axis=1))
+    plot(sum(W[24*day:24*(day+1)], axis=1))
     return None
