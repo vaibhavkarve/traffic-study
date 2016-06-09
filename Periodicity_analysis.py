@@ -31,6 +31,6 @@ def periodicity_analysis(readfile = './Data_Files/Trips_BA_2011.txt',
     # calculate variance for data stratified thusly.
     for period in range(START_PERIOD, END_PERIOD + 1):
         data_stratified = data_matrix_create(readfile, period)
-        data_variances = nanvar(data_stratified, axis=0)
+        data_variances = nanvar(data_stratified, axis=1)
         cumulative_strata_variances[period] = nanmean(data_variances)
     return cumulative_strata_variances
