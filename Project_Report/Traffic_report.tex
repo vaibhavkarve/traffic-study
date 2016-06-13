@@ -5,7 +5,7 @@
 \usepackage{subcaption}
 \usepackage{sidecap}
 
-\author{Vaibhav Karve}
+\author{Vaibhav Karve\\Derrek Yager}
 \title{Progress report on study of NYC traffic}
 
 \begin{document}
@@ -42,6 +42,7 @@ average travel time in seconds, for every hour of the year; and the other
 giving the number of trips on that used that link, for every hour of the
 year.
 
+
 \subsection{Periodicity analysis}
 \subsubsection{Stratifying the data}
 Intuitively, one may expect that traffic patterns repeat themselves
@@ -55,17 +56,31 @@ from flat lists of trips and traveltimes to something that may be
 viewed as stratified data. 
 
 Stratified data now looks like:
-	\[ \left( \begin{array}{ccccc}
-	\mathbf{Stratum\_1} & \mathbf{Stratum\_2} & \mathbf{Stratum\_3} & \cdots &
-		\mathbf{Stratum\_N} \\
-	5 & 2 & 32 & \cdots & 10 \\
-	? & 7 & 5 & \cdots & ? \\
-	33 & ? & 12 & \cdots & ? \\
-	\vdots & \vdots & \vdots & \cdots & \vdots
-	\end{array} \right)\]
 
-Here, \(N=24\times\mathtt{period}\). We let period range from \(2\)
-to \(38\) for our periodicity analysis.
+\[\bordermatrix{
+	~ & \text{Cycle 1} & \text{Cycle 2} & \cdots &\text{Cycle }\left(
+		\lfloor\frac{365}{\mathtt{period}}\rfloor+1\right)&\cr
+	\qquad\text{Stratum 1} & 5 & 2 & \cdots & 10 \cr
+	\qquad\text{Stratum 2} & ? & 7 & \cdots & 5 \cr
+	\qquad\qquad\vdots & \vdots & \vdots & ~ & \vdots \cr
+	\text{Stratum 24*\texttt{period}-1} & 33 & ? & \cdots & ? \cr
+	\text{Stratum 24*\texttt{period}} & ? & 32 & \cdots & ? \cr	}\]
+
+Here, number of rows \(=24\times\mathtt{period}\). We let period range from
+\(2\) to \(38\) for our periodicity analysis. As an illustration, we show
+below the special case when \(\mathtt{period} = 7\) i.e., cycles are weeks.
+
+\[\bordermatrix{
+	~ & \text{Week 1} & \text{Week 2} & \cdots & \text{Week 53} & \cr
+    	\text{Sat 0000-0100 hrs} & 5 & 2 & \cdots & 10 \cr
+    	\text{Sat 0100-0200 hrs} & ? & 7 & \cdots & 5 \cr
+    	\qquad\qquad\vdots & \vdots & \vdots & ~ & \vdots \cr
+	\text{Fri 2200-0300 hrs} & 33 & ? & \cdots & ? \cr
+	\text{Fri 2300-0000 hrs} & ? & 32 & \cdots & ? \cr	}\]
+
+Note that the trailing values in the last column will need to be set to (?)
+because a year does not contain \(53\) full weeks and there will be data
+points ``missing'' in the last week.
 
 \subsubsection{Missing values}
 The question marks (?) in the above matrix correspond to those hours for which
@@ -81,16 +96,16 @@ The most natural first approximation for these missing values is the mean
 value of the corresponding stratum to which each missing value belongs.
 
 The Inferred Stratified data looks like:
-	\[ \left( \begin{array}{ccccc}
-	\mathbf{Stratum\_1} & \mathbf{Stratum\_2} & \mathbf{Stratum\_3} & \cdots &
-		\mathbf{Stratum\_N} \\
-	5 & 2 & 32 & \cdots & 10 \\
-	Mean_1 & 7 & 5 & \cdots & Mean_N \\
-	33 & Mean_2 & 12 & \cdots & Mean_N \\
-	\vdots & \vdots & \vdots & \cdots & \vdots
-	\end{array} \right)\]
-
-Here, we calculated the mean for each stratum by ignoring the missing values.
+\[\bordermatrix{
+	~ & \text{Cycle 1} & \text{Cycle 2} & \cdots &\text{Cycle }\left(
+		\lfloor\frac{365}{\mathtt{period}}\rfloor+1\right)&\cr
+	\qquad\text{Stratum 1} & 5 & 2 & \cdots & 10 \cr
+	\qquad\text{Stratum 2} & Mean_1 & 7 & \cdots & 5 \cr
+	\qquad\qquad\vdots & \vdots & \vdots & ~ & \vdots \cr
+	\text{Stratum 24*\texttt{period}-1} & 33 & Mean_2 & \cdots & Mean_n \cr
+	\text{Stratum 24*\texttt{period}} & Mean_1 & 32 & \cdots & Mean_n \cr	}\]
+where \(n=\left(\lfloor\frac{365}{\mathtt{period}}\rfloor+1\right)\). Here, we
+calculated the mean for each stratum by ignoring the missing values.
 
 \subsubsection{Stratified variances}
 To establish the optimal choice of \texttt{period} for the data, we calculate
@@ -175,39 +190,37 @@ overlaid with the \(r=1\) results from Non-negative Matrix factorization. NMF
 is discussed in greater detail in the next section.
 
 \begin{figure}[h!]
-    \begin{subfigure}[b]{0.6\textwidth}
+    \begin{subfigure}[b]{0.5\textwidth}
         \includegraphics[width=\textwidth]
 	        {Figures/Daily_trends_AC_Saturday.pdf}
     \end{subfigure}
     ~
-    \begin{subfigure}[b]{0.6\textwidth}
+    \begin{subfigure}[b]{0.5\textwidth}
         \includegraphics[width=\textwidth]
        		{Figures/Daily_trends_AC_Sunday.pdf}
     \end{subfigure}
-\end{figure}
 
-\begin{figure}
-    \begin{subfigure}[b]{0.6\textwidth}
+    \begin{subfigure}[b]{0.5\textwidth}
         \includegraphics[width=\textwidth]
         		{Figures/Daily_trends_AC_Monday.pdf}
     \end{subfigure}
     ~
-    \begin{subfigure}[b]{0.6\textwidth}
+    \begin{subfigure}[b]{0.5\textwidth}
         \includegraphics[width=\textwidth]
         		{Figures/Daily_trends_AC_Tuesday.pdf}
     \end{subfigure}
 
-    \begin{subfigure}[b]{0.6\textwidth}
+    \begin{subfigure}[b]{0.5\textwidth}
         \includegraphics[width=\textwidth]
         		{Figures/Daily_trends_AC_Wednesday.pdf}
     \end{subfigure}
     ~
-    \begin{subfigure}[b]{0.6\textwidth}
+    \begin{subfigure}[b]{0.5\textwidth}
         \includegraphics[width=\textwidth]
         		{Figures/Daily_trends_AC_Thursday.pdf}
     \end{subfigure}
     
-    \begin{subfigure}[b]{0.6\textwidth}
+    \begin{subfigure}[b]{0.5\textwidth}
         \includegraphics[width=\textwidth]
         		{Figures/Daily_trends_AC_Friday.pdf}
     \end{subfigure}
@@ -220,13 +233,13 @@ is discussed in greater detail in the next section.
         \\\\
         As can be seen from the plots, the rank-one factor of our data
         matrix can act as a low-rank approximation.
-        \\\\
+        \\
+	\end{subfigure}
         \textbf{Unresolved issue:} Why is the \(W\) vector slightly
         higher than the ``mean'' daily trend?
-	\end{subfigure}    
 \end{figure}
+\vspace*{2cm}
 
-\newpage
 \subsubsection{Observations from visual examination of daily trends}
 From visual examination of the graphs showing daily trends of traffic, we can
 make a few observations:
