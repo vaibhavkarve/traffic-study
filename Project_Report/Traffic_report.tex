@@ -383,4 +383,134 @@ trends.
     		datapoints from the factors themselves. (Weighted matrix entried
     		need to be explored as a way of doing this.)
 \end{enumerate}
+
+\section{3-Point Plan}
+All the data for an entire year can be organized into a matrix of size
+\(8760\times 260855\). The \(8760\) comes from \(24\times 365\) while
+\(260855\) represents the number of links on the NYC grid. But most links
+on the grid have a lot of data missing on them. We therefore divide the job
+of estimating traffic on them into three different phases.
+
+\subsection{Phase 1: Compression}
+We first deal with links that have less than \(30\)-days worth of data
+missing. This means, we restirct our attention to only \(2302\) links.
+
+Using NMF we factor \(D\), which is a \(8760\times 2302\) matrix into \(W\)
+and \(H\) of sizes \(8760\times\text{rank}\) and \(\text{rank}\times 2302\),
+rank is a variable that we need to pick.
+
+NMF is aimed at minimizing the error \(||D-WH||^2 = \sum_{i,j}(D-WH)_{ij}^2\).
+As seen in the following figure, relative error drops with increase in rank
+and we therefore should aim for a higher rank in order to get a closer
+approximation.
+
+\begin{figure}[hbtp]
+\centering
+\includegraphics[scale=0.5]{Figures/SNTF_Error_vs_Rank.pdf}
+\caption{SNTF relative error vs. Rank}
+\end{figure}
+
+However, there is a price to pay for picking a higher rank in that higher rank
+makes for poorer compression. Each unit increment in rank would mean we need
+to store \(8760\) additional numbers in \(W\) and \(260855\) additional
+numbers in \(H\).
+
+As will be discussed shortly, we can save on the \(H\)-entries by running
+Sparse-NMF instead of NMF. However, the fact remains that each increment in
+entails atleast \(8760\) additional entries. So what should be the optimal
+choice? How do we make sure that a higher choice of rank is not simply fitting
+some white noise already present in \(D\)? Some of these questions can be
+answered by Sparse-NMF, while also achieving better compression and
+pattern-recognition.
+
+\subsubsection{Sparse Non-negative Matrix Factorization}
+Sparse-NMF (hereafter SNMF) minimizes the following error:
+	\[\text{Error} = ||D-WH||_2^2 + \beta\sum_i||H[:,i]||_1^2 + \eta||W||_2^2\]
+where \(H[:,i]\) represents the \(i^{th}\) column of \(H\) and \(\beta,\eta\)
+are positive constants that we need to fix.
+
+To achieve this, we just use different multiplicative update rule. SNMF ensures
+sparsity in \(H\), i.e. it adjusts the columns of \(H\) to look more like
+\(\left(1,0,\ldots,0\right)\), \(\left(0,1,0,\ldots,0\right)\) and so on.
+
+SNMF clusters every column of \(D\) into several clusters. The columns of
+\(W\) record the trend of each cluster centroid while the columns of \(H\)
+record the projection of the trend on a certain link onto each of the
+clusters. For example, an \(H\)-column of \(\left(0,3,0,\ldots,0\right)\)
+would mean that traffic on the given link matches cluster \(\#2\) and that the
+approximate trend can be obtained by scaling the second column of \(W\) by a
+factor of \(3\).
+
+We define a new metric to measure the sparsity of \(H\):
+	\[\text{Sparsity} = \frac{1}{n}\sum_{i=1}^{n}\frac{1}{\text{rank}}\left
+	\Vert\dfrac{H[:,i]-\max H[:,i]}{\max H[:,i]}\right\Vert_2^2\]
+A completely sparse \(H\) would have \(\text{Sparsity} = 1\). In practice
+though, a sparsity value between \(0.6\) to \(1\) can be considered to be
+sufficient.
+
+Note that Sparsity of \(H\) will be affected by choice of \(\beta\) and
+\(\eta\).
+
+\subsubsection{Choosing rank}
+We need to choose the smallest rank that keeps the error below some given
+threshhold. But since it is difficult to decide what this threshhold should
+be, we choose an alternate strategy. We apply SNMF on \(D\) for various values
+of rank. Seeing as SNMF clusters links based on their traffic pattern, we keep
+increasing rank till the point where we start getting empty clusters. Beyond
+this point, adding more rank will be superfluous because it will not change
+the clustering pattern even though it might keep reducing the error via
+noise-fitting.
+
+We found that for Trips data for the year \(2011\), this limit was reached at
+\(\text{rank} = 8\). Fixing rank at \(8\), we can try to choose \(\beta\) and
+\(\eta\) to get the sparsity of \(H\) as close to \(1\) as possible.
+
+\subsection{Phase 2: Estimation}
+From Phase \(1\), we obtain the \(8\) typical traffic trends. The underlying
+assumption is that even though these \(8\) trends were picked out after
+analyzing the yearly trends of \(2303\) of the busiest links in New York, all
+other \(258552\) remaining links follow one of these eight trends (up to a
+scale factor). We now need to assign the correct cluster to each new link
+without recalculating the clustering pattern each time. We do this simply by
+minimizing the Euclidean distance of each trend from the trend of every
+cluster cetroid.
+
+For each new link, given a trend vector, \(T\) of length \(8760\) with
+possibly missing data having been filled with the mean of the available
+values, we wish to find \(c>0\) and \(i\in\{1,2,\ldots,8\}\) such the
+solve the following minimization problem:
+	\[\min_{i\in\{1,2,\ldots,8\}}\min_{c>0}||T-cW_i||_2^2\]
+where \(W_i\) denotes the \(i^{th}\)-column of \(W\).
+
+To find \(c\), we solve
+\begin{align*}
+	0 	&= \frac{\partial}{\partial c}||T-cW_i||_2^2 \\
+		&= \frac{\partial}{\partial c}\left\langle (T-cW_i)^\mathsf{T};
+				T-cW_i\right\rangle \\
+		&= \frac{\partial}{\partial c}\left\langle T^\mathsf{T}
+				-cW_i^\mathsf{T}; T-cW_i\right\rangle \\
+		&= \frac{\partial}{\partial c}\left(||T||_2^2 + c^2||W_i||_2^2
+				- 2c\langle T^\mathsf{T};W_i\rangle\right) \\
+		&= 2c||W_i||_2^2 - 2\langle T^\mathsf{T};W_i\rangle \\
+\end{align*}
+Therefore,
+	\[c = \frac{\langle T^\mathsf{T};W_i\rangle}{||W_i||_2^2}\]
+Once we have \(c\), we just pick the \(i\in\{1,2,\ldots,8\}\) that minimizes
+the Euclidean distance. In this manner, we can assign clusters to each new
+link one-by-one.
+
+\subsection{Phase 3: Folding}
+Phase \(2\) worked around the problem of having missing values in the data by
+simply filling in with the mean data-entry for that given link. However, there
+are links which have very little or almost no data on them. In such cases,
+filling in with a mean presents two difficulties: firstly, it results in a
+near-constant trend and hence makes for a bad fit in Phase \(2\). Secondly,
+the clustering become very sensitive to our guess of the ideal filler value.
+
+To get around this problem, we exploit patterns/redundancies that we know
+exist in our data. For example, we have four-years worth of data \((2010--
+2013)\). We can use this redundancy to increase the number of data entries on
+our link. We could also use the \(7\)-day periodicity in data to replicate
+available data-points before following through with Phase \(2\).
+
 \end{document}
