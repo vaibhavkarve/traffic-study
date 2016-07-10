@@ -1,5 +1,6 @@
 from numpy import array, product, tensordot, multiply, argmax, concatenate
 from numpy import nan, ndarray, isnan, copy, mean, ones, zeros, identity, amax
+from numpy import nanmean
 from numpy import sum as sum2
 from numpy.random import random
 from math import sqrt
@@ -35,7 +36,8 @@ def NTF(data, RANK = 1, axis = 0, round = 0):
         print 'axis value too large.'
         return None
 
-    D = replace_placeholder(D, value = 0.00001)
+    #D = replace_placeholder(D, value = 0.00001)
+    D = replace_placeholder(D, value = nanmean(D))
     W_shape = list(shape[0:axis+1])
     W_shape.append(RANK)
     H_shape = [RANK]
@@ -65,9 +67,12 @@ def NTF(data, RANK = 1, axis = 0, round = 0):
                 H[r,i] = 1
                 #H[:,i] = floor(H[:,i]/max(H[:,i]))
         # Following is the error term, which is derived from the matrix norm.
-        print sum2(multiply(D - tensorprod(W,H,1), D - tensorprod(W,H,1)))/mean(D)/D.size
+        #print sum2(multiply(D - tensorprod(W,H,1), D - tensorprod(W,H,1)))/sum2(D)
         #print sum2(H.T)
+        print sum2(multiply(D - tensorprod(W,H,1), D - tensorprod(W,H,1)))/sum2(multiply(D,D))*100
     return array(W), array(H)
+    #return sum2(multiply(D - tensorprod(W,H,1), D - tensorprod(W,H,1)))/sum2(multiply(D,D))*100
+        
 
 def SNTF(data, RANK = 1, axis = 0, beta = 0.5, eta = 0.001):
     D = array(data)
@@ -75,7 +80,7 @@ def SNTF(data, RANK = 1, axis = 0, beta = 0.5, eta = 0.001):
         print 'axis value too large.'
         return None
 
-    D = replace_placeholder(D, value = 0.0001)
+    D = array([replace_placeholder(i, value = nanmean(i)) for i in D.T]).T
     W_shape = list(D.shape[0:axis+1])
     W_shape.append(RANK)
     H_shape = [RANK]
@@ -104,10 +109,8 @@ def SNTF(data, RANK = 1, axis = 0, beta = 0.5, eta = 0.001):
         error_new = sum2(multiply(D - tensorprod(W,H,1), D - tensorprod(W,H,1)))/mean(D)/D.size
 
         # Following is the error term, which is derived from the matrix norm.
-        #print error_old# - error_new
-    #print error_new*mean(D)*D.size
-    #print sum2(sum2(H.T)**2)
-    #print sum2(multiply(W,W))
+        print error_old# - error_new
+    #print error_new*sum2(D), sum2(sum2(H.T)**2)*beta, sum2(multiply(W,W))*eta
     #return error_new*mean(D)*D.size, sum2(sum2(H.T)**2), sum2(multiply(W,W))
-    #return error_new*mean(D)*D.size
-    return array(W), array(H)
+    return error_new*100
+    #return array(W), array(H)
