@@ -1,6 +1,5 @@
 from Globals import filenames_PC as filenames
 
-
 link_id = 1542
 
 from Read_data import read_full_link_json
@@ -16,8 +15,10 @@ from scipy.optimize import minimize
 
 W = read_W()
 print 'W read'
+print 'Link_id,', 'Percent error'
 #trend = V[:,full_link_ids.index(link_id)]
-for trend in V[:,1000:1050].T:
+for counter in range(V.shape[1]):
+    trend = V.T[counter]
     W_strip = array([W[hour] for hour in range(len(W)) if ~isnan(trend[hour])])
     trend = array([trend[hour] for hour in range(len(trend)) if ~isnan(trend[hour])])
 
@@ -27,7 +28,7 @@ for trend in V[:,1000:1050].T:
                       method = 'L-BFGS-B',
                       bounds = [(0,None) for i in range(50)])
     h = result.x
-    print func(h)/norm(trend)*100.
+    print counter+1,'\t', func(h)/norm(trend)*100.
 #plot(h)
 
 #show()

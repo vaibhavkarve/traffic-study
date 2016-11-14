@@ -4,7 +4,7 @@ def random_matrix(size):
     from numpy.random import random, randint
     from numpy import array, float64
     
-    with open('./Data_Files/Random_numbers.txt','r') as file1:
+    with open(filenames['random'],'rb') as file1:
         if size%259993 == 0:
             print 'Error: No staggering'
         matrix = [float(line[:-1])+1 for line in file1]
@@ -21,7 +21,7 @@ def find_signatures(data, rank=50, beta=0.1, eta=0.1, threshold=0.01):
     from numpy.linalg import norm
     from math import sqrt
 
-    V = replace_placeholder(data, value = 0.)
+    V = replace_placeholder(data, value = 0.00001)
     data_positions = ~isnan(data)
     #V = multiply(data, data_positions)
     data_positions_H = concatenate((copy(data_positions), ones((len(V),rank))),
@@ -31,7 +31,7 @@ def find_signatures(data, rank=50, beta=0.1, eta=0.1, threshold=0.01):
     def update_W(V, W, H):
         Term_1 = dot(V, H.T)
         Term_2 = dot(multiply(dot(W, H),data_positions_H), H.T)
-        return multiply(multiply(W,Term_1), 1./Term\_2)
+        return multiply(multiply(W,Term_1), 1./Term_2)
 
 
     def update_H(V, W, H):
@@ -77,13 +77,13 @@ def find_signatures(data, rank=50, beta=0.1, eta=0.1, threshold=0.01):
 
 def read_W():
     from numpy import array
-    with open('Data_Files/W.txt', 'rb') as readfile:
+    with open(filenames['W'], 'rb') as readfile:
         W = readfile.readlines()
     return array([map(float, line.split()) for line in W])
 
-'''
+
 from Read_data import read_full_link_json
-full_link_ids, V = read_full_link_json(trips=1)
+full_link_ids, V = read_full_link_json(trips=0)
 W, H, error = find_signatures(V, rank=50, beta=0.1, eta=0.1, threshold=0.01)
 print W.shape, H.shape
 
@@ -96,7 +96,7 @@ Wfile = open('Data_Files/W.txt','rb')
 W = read_W()
 [plot(range(24), W[i*24:(i+1)*24,35]) for i in range(7)]
 show()
-'''
+
 
 
 
