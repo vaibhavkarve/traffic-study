@@ -1,4 +1,7 @@
 # traffic-study
+
+## last updated: 11/21/2016
+
 Project with Prof. Sowers studying the traffic data of NYC taxis, provided by Prof. Work. Project partner: Derrek Yager.UIUC Mathematics Department.
 
 \section{In Read\_data.py}
