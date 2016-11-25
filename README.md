@@ -13,10 +13,14 @@ Next, we want to pull out the data corresponding to links with at most 30 days w
 
 Then, we want to find the periodicity of the full link data. By running autocorrelation, we see that the period is 7 days. We check the refinement of this by running autocorrelation_hourly, and verify the 7-day period. We also checked the periodicity of the travel times and it matches the 7-day period (graph omitted but is saved in Figures).
 
-\begin{figure}[H] \centering \includegraphics[width=.9\textwidth]{Autocorrelation_Full_Links.ps} \end{figure}
 
-\begin{figure}[H] \centering \includegraphics[width=.9\textwidth]{Autocorrelation_Full_Links_hourly.ps} \end{figure}
+![full_links][pic1]
+[pic1]: https://raw.githubusercontent.com/vaibhavskarve/traffic-study/master/Project_Report_New/Figures/Autocorrelation_Full_Links.png
+
+![full_links_hourly][pic2]
+[pic2]: https://raw.githubusercontent.com/vaibhavskarve/traffic-study/master/Project_Report_New/Figures/Autocorrelation_Full_Links_Hourly.png
+
 
 ## In Phase1.py
- Beware NaN is a float so int(NaN) returns error We group the functions for running Sparse Non-negative Matrix Factorization under *find_signatures*. Using the campus cluster, we run SNMF with $$\beta$$, $$\eta$$, and rank ????? Running SNMF(traveltimes, rank=50, $$\beta$$=0.1, $$\eta$$=0.1, threshold=0.01) gives error of 39.890%. Running SNMF(trips, rank=50, $$\beta=$$0.1, $$\eta$$=0.1, threshold=0.01) gives error of 28.666%.
+ Beware NaN is a float so int(NaN) returns error We group the functions for running Sparse Non-negative Matrix Factorization under *find_signatures*. Using the campus cluster, we run SNMF with \beta, \eta, and rank ????? Running SNMF(traveltimes, rank=50, \beta=0.1, \eta=0.1, threshold=0.01) gives error of 39.890%. Running SNMF(trips, rank=50, \beta=0.1, \eta=0.1, threshold=0.01) gives error of 28.666%.
 
