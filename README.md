@@ -22,5 +22,5 @@ Then, we want to find the periodicity of the full link data. By running autocorr
 
 
 ## In Phase1.py
- Beware NaN is a float so int(NaN) returns error We group the functions for running Sparse Non-negative Matrix Factorization under *find_signatures*. Using the campus cluster, we run SNMF with &beta, \eta, and rank ????? Running SNMF(traveltimes, rank=50, &beta;=0.1, \eta=0.1, threshold=0.01) gives error of 39.890%. Running SNMF(trips, rank=50, \beta=0.1, \eta=0.1, threshold=0.01) gives error of 28.666%.
+ Beware NaN is a float so int(NaN) returns error We group the functions for running Sparse Non-negative Matrix Factorization under *find_signatures*. Using the campus cluster, we run SNMF with &beta;, &eta;, and rank ????? Running SNMF(traveltimes, rank=50, &beta;=0.1, &eta;=0.1, threshold=0.01) gives error of 39.890%. Running SNMF(trips, rank=50, &beta;=0.1, &eta;=0.1, threshold=0.01) gives error of 28.666%.
 
