@@ -1,5 +1,10 @@
-from Globals import filenames_PC as filenames
-
+import Globals
+filenames = Globals.filenames_PC
+TRIPS = Globals.TRIPS
+TOTAL_LINKS = Globals.TOTAL_LINKS
+HOURS_IN_YEAR = Globals.HOURS_IN_YEAR
+FULL_LINKS = Globals.FULL_LINKS
+EMPTY_LINKS = Globals.EMPTY_LINKS
 
 # Reads a csv and returns a list of dictionaries, one for each line
 # with first line in csv as keys. Use only for 'links' and 'nodes'. 
@@ -85,6 +90,8 @@ def write_data_coo((rows, columns_offset_by_one, trips, traveltimes)):
     return None
 
 
+## Link_ids range from 1 to 260855. But we also wrote blank-data for link_id 260856.
+## Use this last link_id for debugging.
 def write_data_array():
     from time import time
     from numpy import array
@@ -99,9 +106,9 @@ def write_data_array():
     # columns start at 0.
     columns_offset_by_one = map(int, columns_offset_by_one[22:].split(','))
     print 'Columns converted to ints,',time()-time0
-    trips = trips[6:].split(',')
+    trips = trips[6:].rstrip().split(',')
     print 'Trips were read,',time()-time0
-    traveltimes = traveltimes[13:].split(',')
+    traveltimes = traveltimes[13:].rstrip().split(',')
     print 'Travel times were read,',time()-time0
     # We reverse all the arrays so that we can write data to the new csv file
     # starting at hour 0 instead of 8759.
@@ -110,8 +117,8 @@ def write_data_array():
     trips.reverse()
     traveltimes.reverse()
     time = rows[0]
-    line_trips = ['' for j in range(260856)]
-    line_traveltimes = ['' for j in range(260856)]
+    line_trips = ['' for j in range(TOTAL_LINKS + 1)]
+    line_traveltimes = ['' for j in range(TOTAL_LINKS + 1)]
         
     with open(filenames['data_trips'],'wb') as writefile_trips,\
          open(filenames['data_traveltimes'],'wb') as writefile_traveltimes:
@@ -123,8 +130,8 @@ def write_data_array():
                 time += 1
                 writefile_trips.write(','.join(line_trips)+'\n')
                 writefile_traveltimes.write(','.join(line_traveltimes)+'\n')
-                line_trips = ['' for j in range(260856)]
-                line_traveltimes = ['' for j in range(260856)]
+                line_trips = ['' for j in range(TOTAL_LINKS + 1)]
+                line_traveltimes = ['' for j in range(TOTAL_LINKS + 1)]
                 line_trips[columns_offset_by_one[i]-1] = trips[i]
                 line_traveltimes[columns_offset_by_one[i]-1] = traveltimes[i]
 
@@ -134,32 +141,58 @@ def write_data_array():
 
 
 def find_full_links():
-    with open(filenames['data_coo_form'], 'rb') as coofile:
-	print 'data_coo_form.txt is opened'
-	coofile.readline()
-	print 'First line is read and skipped'
-	columns_offset = coofile.readline()[22:].split(',')
-	print 'columns_offset was read successfully.'
-    full_link_ids = []
-    # 30 represents the number of allowed nan_days.
-    for link_id in range(1,260856+1):
-        if columns_offset.count(str(link_id)) >= (365-30)*24:
-            full_link_ids.append(link_id)
-            print link_id
-    return full_link_ids
+    from csv import reader
+    from numpy import array, savetxt
+    reader = reader(open(filenames['data_trips'], 'rb'))
+    print 'data_trips.csv is opened'
+    potential_full_links = range(1, TOTAL_LINKS + 1+1)
+    missing_entries = [0 for i in potential_full_links]
+    for line in reader:
+        defaulters = []
+        for link_id in potential_full_links:
+            missing_entries[link_id-1] += 1 - bool(line[link_id-1])
+            if missing_entries[link_id-1] > 30*24:
+                defaulters.append(link_id)
+        potential_full_links = [i for i in potential_full_links
+                                if i not in defaulters]
+        print reader.line_num, len(potential_full_links)
+    savetxt(filenames['full_link_ids'], array(potential_full_links),
+            fmt='%d')
+    return potential_full_links
+
+
+def find_empty_links():
+    from csv import reader
+    from numpy import array, savetxt
+    reader = reader(open(filenames['data_trips'], 'rb'))
+    print 'data_trips.csv is opened'
+    potential_empty_links = range(1, TOTAL_LINKS + 1+1)
+    entries = [0 for i in potential_empty_links]
+    for line in reader:
+        defaulters = []
+        for link_id in potential_empty_links:
+            entries[link_id-1] += bool(line[link_id-1])
+            if entries[link_id-1] > 30*24:
+                defaulters.append(link_id)
+        potential_empty_links = [i for i in potential_empty_links
+                                if i not in defaulters]
+        print reader.line_num, len(potential_empty_links)
+    savetxt(filenames['empty_link_ids'], array(potential_empty_links),
+            fmt='%d')
+    return potential_empty_links
 
 
 def write_full_link_data():
-    from csv import reader
+    from numpy import loadtxt
+    from csv import reader as csvreader
     from json import dump
     from numpy import nan
-    with open(filenames['full_link_ids'],'rb') as readfile:
-        full_link_ids = list(reader(readfile))[0]
-        full_link_ids = map(int, full_link_ids)
+    full_link_ids = loadtxt(filenames['full_link_ids'], dtype='int')
+    
     V = []
     with open(filenames['data_trips'],'rb') as readfile:
-        reader = reader(readfile)
-        for line in reader:
+        reader = csvreader(readfile)
+        for line in reader:            
             V.append(map(float, [line[i-1] if bool(line[i-1]) else nan
                                  for i in full_link_ids]))
             print reader.line_num
@@ -167,32 +200,33 @@ def write_full_link_data():
 
     V = []
     with open(filenames['data_traveltimes'],'rb') as readfile:
-        reader = reader(readfile)
+        reader = csvreader(readfile)
         for line in reader:
             V.append(map(float, [line[i-1] if bool(line[i-1]) else nan
                                  for i in full_link_ids]))
             print reader.line_num
     dump(V, open(filenames['full_link_traveltimes'], 'wb'))
+    
     return None
 
 
 # Use the following when you wish to read the array for only 2302 full links.
-def read_full_link_json(trips = 1):
-    from csv import reader
+def read_full_link_json():
     from json import load
-    from numpy import array
-    with open(filenames['full_link_ids'],'rb') as readfile:
-        full_link_ids = list(reader(readfile))[0]
-        full_link_ids = map(int, full_link_ids)
-    if trips == 0:
+    from numpy import array, loadtxt
+    full_link_ids = loadtxt(filenames['full_link_ids'], dtype='int')
+    if TRIPS == 0:
         filename = filenames['full_link_traveltimes']
-    elif trips == 1:
+    elif TRIPS == 1:
         filename = filenames['full_link_trips']
     else:
         print 'Error: invalid argument'
         return None
     V = load(open(filename, 'rb'))
-    return full_link_ids, array(V)
+    assert len(full_link_ids) == FULL_LINKS
+    assert len(V) == HOURS_IN_YEAR
+    assert len(V[0]) == FULL_LINKS
+    return list(full_link_ids), array(V)
 
 
 from numpy import nan
@@ -265,9 +299,78 @@ def autocorrelation_hourly(data):
     #legend(bbox_to_anchor=(1.35, 0.95))
     return None
 
+
+def find_Phase2_links():
+    from numpy import loadtxt
+
+    empty_link_ids = loadtxt(filenames['empty_link_ids'], dtype=int)
+    assert len(empty_link_ids) == EMPTY_LINKS + 1
+    Phase2_links = []
+
+    j = 0
+    for i in range(1, TOTAL_LINKS+1+1):
+        if i < empty_link_ids[j]:
+            Phase2_links.append(i)
+            print i
+        elif i == empty_link_ids[j]:
+            j +=1
+        else:
+            'Error!'
+        # We don't have to worry about tail-end because last empty_link and
+        # last total_link are the same (i.e. 260856th)
+    assert len(Phase2_links) == TOTAL_LINKS+1 - (EMPTY_LINKS+1)
+    return Phase2_links
+
+
+## Link_ids range from 1 to 260855. But we also wrote blank-data for link_id 260856.
+## Use this last link_id for debugging.
+def write_data_array_transpose():
+    from numpy import array, loadtxt
+
+    with open(filenames['data_coo_form'],'rb') as readfile:
+        hours, link_ids, trips, traveltimes = readfile.readlines()
+    hours = map(int, hours[5:].strip().split(','))
+    link_ids = map(int, link_ids[22:].strip().split(',')) # this list includes duplicates
+    trips = trips[6:].strip().split(',')
+    hours, link_ids, trips = zip(*[(h,l,t) for (h,l,t)
+                                   in sorted(zip(hours,link_ids,trips),
+                                             key=lambda pair:pair[1])])
+    assert link_ids[0] == 1
+    
+    link = 1
+    line_trips = ['' for j in range(HOURS_IN_YEAR)]
+
+    file_create = open(filenames['data_trips_transpose'],'wb')
+    file_create.close()
+    for i in range(len(link_ids)):
+        if link == link_ids[i]:
+            line_trips[hours[i]] = trips[i]
+        else:
+            while link < link_ids[i]:
+                link += 1
+                with open(filenames['data_trips_transpose'],'ab') as writefile_trips:
+                    writefile_trips.write(','.join(line_trips)+'\n')
+                line_trips = ['' for j in range(HOURS_IN_YEAR)]
+            line_trips[hours[i]] = trips[i]
+    with open(filenames['data_trips_transpose'],'ab') as writefile_trips:
+        writefile_trips.write(','.join(line_trips)+'\n')
+    line_trips = ['' for j in range(HOURS_IN_YEAR)]
+    while link<TOTAL_LINKS-1:
+        link += 1
+        with open(filenames['data_trips_transpose'],'ab') as writefile_trips:
+            writefile_trips.write(','.join(line_trips)+'\n')
+    with open(filenames['data_trips_transpose'],'ab') as writefile_trips:
+        writefile_trips.write(','.join(line_trips))
+    return None
+
+#write_data_array_transpose()
+
+#empty_links = find_empty_links()
+#print len(empty_links)
+
 '''
 from matplotlib.pyplot import plot, show
-full_link_ids, V = read_full_link_json(trips=1)
+full_link_ids, V = read_full_link_json(trips=TRIPS)
 print type(full_link_ids[0])
 print full_link_ids.index(169017)
 [plot(range(24), V[i*24:(i+1)*24,1]) for i in range(7)]

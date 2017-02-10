@@ -1,12 +1,16 @@
-from Globals import filenames_PC as filenames
+import Globals
+filenames = Globals.filenames_PC
+RANK = Globals.RANK
+TRIPS = Globals.TRIPS
+FULL_LINKS = Globals.FULL_LINKS
+
 
 def random_matrix(size):
     from numpy.random import random, randint
     from numpy import array, float64
     
     with open(filenames['random'],'rb') as file1:
-        if size%259993 == 0:
-            print 'Error: No staggering'
+        assert size%259993 != 0
         matrix = [float(line[:-1])+1 for line in file1]
         start = randint(0,len(matrix)-1)
         matrix = matrix*(size/len(matrix)+1)
@@ -14,16 +18,16 @@ def random_matrix(size):
     return array(matrix[:size], dtype=float64)
 
 
-def find_signatures(data, rank=50, beta=0.1, eta=0.1, threshold=0.01):
+def find_signatures(data, rank=RANK, beta=0.1, eta=0.1, threshold=0.01):
     from Read_data import replace_placeholder
     from numpy import array, nanmean, dot, multiply, product, copy, identity
     from numpy import concatenate, zeros, ones, isnan
+    from numpy import sum as npsum
     from numpy.linalg import norm
     from math import sqrt
 
-    V = replace_placeholder(data, value = 0.00001)
+    V = replace_placeholder(data, value = 0.0)
     data_positions = ~isnan(data)
-    #V = multiply(data, data_positions)
     data_positions_H = concatenate((copy(data_positions), ones((len(V),rank))),
                                    axis=1)
     data_positions_W = concatenate((copy(data_positions), ones((1,len(V.T)))))
@@ -71,22 +75,62 @@ def find_signatures(data, rank=50, beta=0.1, eta=0.1, threshold=0.01):
             W, H = W_normalize(W, H)
             print 'Iteration ',iterations,', Error = ', error_old
             iterations += 1
-        return array(W), array(H), error_new
+            print 'Sparsity=' , 1./len(H.T)*sum(1./rank*array(
+                [norm((H[:,i]-max(H[:,i]))/max(H[:,i]))**2
+                 for i in range(len(H.T))]))
+
+        # Make H sparser by flattening out things below half-peak height.
+        for i in range(FULL_LINKS):
+            peak  = max(H[:,i])
+            H[:,i] = [entry if entry>peak/2. else 0. for entry in H[:,i]]
+
+        # Sort H and W according to decreasing order of signature popularity.
+        column_entries = [0 for i in range(len(H.T))]
+        for i in range(len(H)):
+            for j in range(len(H.T)):
+                if H[i,j] != 0:
+                    column_entries[j] += 1
+        # Calculate popularity
+        popularity = []
+        for i in range(len(H)):
+            popularity.append(0)
+            for j in range(len(H.T)):
+                if H[i,j] != 0:
+                    popularity[i] += 1./column_entries[j]
+
+        popularity, H, WT = zip(*[(pop,row_H,col_W) for (pop,row_H, col_W)
+                      in sorted(zip(popularity,H,W.T),
+                                key=lambda pair: pair[0], reverse=True)])
+        W = array(WT).T
+        H = array(H)
+
+        from matplotlib.pyplot import plot, show
+        plot(popularity)
+        show()
+        return W, H, error_new
 
     return SNMF() # returns [array(W), array(H), error_new]
 
-def read_W():
-    from numpy import array
-    with open(filenames['W'], 'rb') as readfile:
-        W = readfile.readlines()
-    return array([map(float, line.split()) for line in W])
-
-
+'''
 from Read_data import read_full_link_json
-full_link_ids, V = read_full_link_json(trips=0)
-W, H, error = find_signatures(V, rank=50, beta=0.1, eta=0.1, threshold=0.01)
+from numpy import savetxt
+full_link_ids, V = read_full_link_json()
+print 'Done'
+W, H, error = find_signatures(V, rank=RANK, beta=0.2, eta=0.1, threshold=0.01)
 print W.shape, H.shape
 
+if TRIPS == 1:
+    savetxt(filenames['W_trips'], W, fmt = '%f')
+    print 'W written'
+    savetxt(filenames['H_trips'], H, fmt = '%f')
+    print 'H written'
+elif TRIPS == 0:
+    savetxt(filenames['W_traveltimes'], W, fmt = '%f')
+    print 'W written'
+    savetxt(filenames['H_traveltimes'], H, fmt = '%f')
+    print 'H written'
+'''    
+'''
 print full_link_ids[1]
 from pickle import load
 sig_dis = load(open('Data_Files/Signature_Distribution.p','rb'))
@@ -97,7 +141,7 @@ W = read_W()
 [plot(range(24), W[i*24:(i+1)*24,35]) for i in range(7)]
 show()
 
-
+'''
 
 
 
