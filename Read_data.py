@@ -363,6 +363,10 @@ def write_data_array_transpose():
         writefile_trips.write(','.join(line_trips))
     return None
 
+
+
+
+
 #write_data_array_transpose()
 
 #empty_links = find_empty_links()

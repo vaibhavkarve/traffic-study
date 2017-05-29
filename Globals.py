@@ -10,8 +10,16 @@ filenames_PC = {'links':'./Data_Files/links.csv',
                 'full_link_traveltimes':'./Data_Files/full_link_travel_times.json',
                 'W_trips':'./Data_Files/W_trips.txt',
                 'W_traveltimes':'./Data_Files/W_travel_times.txt',
-                'H_trips':'./Data_Files/H_trips.txt',
-                'H_traveltimes':'./Data_Files/H_travel_times.txt',
+                'W_trips_seed':'./Data_Files/Seeded0,1/W_trips.txt',
+                'W_traveltimes_seed':'./Data_Files/Seeded0,1/W_travel_times.txt',
+                'HT_trips':'./Data_Files/HT_trips.txt',
+                'HT_traveltimes':'./Data_Files/HT_travel_times.txt',
+                'H_trips_seed':'./Data_Files/Seeded0,1/HT_trips.txt',
+                'H_traveltimes_seed':'./Data_Files/Seeded0,1/HT_travel_times.txt',
+                'HT_trips_axed':'./Data_Files/HT_trips_axed.txt',
+                'HT_traveltimes_axed':'./Data_Files/HT_travel_times_axed.txt',
+                'HT_trips_axed_seed':'./Data_Files/Seeded0,1/HT_trips_axed.txt',
+                'W_traveltimes_axed_seed':'./Data_Files/Seeded0,1/HT_travel_times_axed.txt',
                 'random':'./Data_Files/Random_numbers.txt',
                 'data_trips_transpose':'../../data_trips_transpose.csv'}
 
@@ -28,7 +36,10 @@ filenames_cluster = {'links':'./scratch/links.csv',
                      'full_link_traveltimes':'./scratch/full_link_travel_times.json',
                      'W_trips':'./scratch/W_trips.txt',
                      'W_traveltimes':'./scratch/W_travel_times.txt',
-                     'H_trips':'./scratch/H_trips.txt',
+                     'HT_trips':'./scratch/HT_trips.txt',
+                     'HT_traveltimes':'./scratch/HT_travel_times.txt',
+                     'HT_trips_axed':'./scratch/HT_trips_axed.txt',
+                     'HT_traveltimes_axed':'./scratch/HT_travel_times_axed.txt',
                      'W_traveltimes':'./scratch/H_travel_times.txt',
                      'random':'./scratch/Random_numbers.txt',
                      'data_trips_transpose':'./scratch/data_trips_transpose.csv'}
@@ -41,3 +52,19 @@ FULL_LINKS = 2302
 EMPTY_LINKS = 234892
 MID_LINKS = TOTAL_LINKS - FULL_LINKS - EMPTY_LINKS #= 23661
 HOURS_IN_YEAR = 8760
+SEEDED = 1  # 1 or 0 means Phase1 is seeded or not. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

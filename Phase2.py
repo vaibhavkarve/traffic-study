@@ -55,6 +55,7 @@ def Phase2(link_id_list, trips=TRIPS):
     link_id_list = sorted(link_id_list)
     reader = csvreader(open(filenames['data_trips_transpose'], 'rb'))
     link_id_old = 0
+    E = []
     for link_id in link_id_list:
         for skip in range(link_id_old,link_id):
             trend = reader.next()
@@ -64,11 +65,16 @@ def Phase2(link_id_list, trips=TRIPS):
             continue
         # trend should have length 8760 with NaNs
         red_dots, = plot(range(1,49),trend[0+24*24:48+24*24],'ro')
-        coeffs, error = find_decomposition(trend, W)        
+        coeffs, error = find_decomposition(trend, W)
+        E.append(error)
         print link_id,'\t', error
 	with open('./Phase2_results.txt','ab') as writefile:
 	    writefile.write(str(link_id)+'\t'+str(error)+'\n')
         HT.append(coeffs)
+    with open('Errors.csv','wb') as Errorfile:
+        Errorfile.write(','.join(map(str,link_id_list)))
+        Errorfile.write('\n')
+        Errorfile.write(','.join(map(str,E)))
     return array(HT).T, red_dots # This is H for link_id_list
 
 #from Read_data import find_Phase2_links
@@ -81,21 +87,24 @@ from csv import reader
 #link_id_list = map(int, loadtxt(filenames['full_link_ids'], delimiter=',', ndmin=1))
 #link_id_list = (link_id_list[0],)
 #print link_id_list
-link_id_list = (3975,)
+with open('Gabe_link_ids.csv','rb') as Gabe:
+    link_id_list = Gabe.readline()
+    link_id_list = map(int,link_id_list.strip().split('","'))
 coeffs, red_dots = Phase2(link_id_list)
-W = loadtxt(filenames['W_trips'])
-blue_line, = plot(range(1,49),dot(W,coeffs)[0+24*24:48+24*24],'-')
+
+#W = loadtxt(filenames['W_trips'])
+#blue_line, = plot(range(1,49),dot(W,coeffs)[0+24*24:48+24*24],'-')
 #plot(range(1,51),coeffs)
-H = loadtxt(filenames['H_trips'])
+#H = loadtxt(filenames['H_trips'])
 #plot(dot(W,H[:,0].T).T[0:48])
 #plot(range(1,51),H[:,0])
 #red_dots = Line2D([],[],color='red', marker='o', label='Real data')
 #blue_line = Line2D([],[],color='blue', marker='', label='Phase 2 Estimation')
-legend([blue_line, red_dots],['Phase 2 Estimation','Real Data'])
-xlabel('Time (in hours)')
-ylabel('Number of Taxis')
-grid(True)
-show()
+#legend([blue_line, red_dots],['Phase 2 Estimation','Real Data'])
+#xlabel('Time (in hours)')
+#ylabel('Number of Taxis')
+#grid(True)
+#show()
 #fli, V = read_full_link_json()
 
 
