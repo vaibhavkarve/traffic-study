@@ -216,11 +216,13 @@ def read_full_link_json():
     from numpy import array, loadtxt
     full_link_ids = loadtxt(filenames['full_link_ids'], dtype='int')
     if TRIPS == 0:
-        filename = filenames['full_link_traveltimes']
+        filename = filenames['full_link_speeds']
+        print 'Speeds'
     elif TRIPS == 1:
         filename = filenames['full_link_trips']
+        print 'Trips'    
     else:
-        print 'Error: invalid argument'
+        print('Error: invalid argument')
         return None
     V = load(open(filename, 'rb'))
     assert len(full_link_ids) == FULL_LINKS

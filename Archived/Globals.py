@@ -4,22 +4,25 @@ filenames_PC = {'links':'./Data_Files/links.csv',
                 'data_coo_form':'../../data_coo_form.txt',
                 'data_trips':'../../data_trips.csv',
                 'data_traveltimes':'../../data_travel_times.csv',
+
                 'full_link_ids':'./Data_Files/full_link_ids.txt',
                 'empty_link_ids':'./Data_Files/empty_link_ids.txt',
                 'full_link_trips':'./Data_Files/full_link_trips.json',
                 'full_link_traveltimes':'./Data_Files/full_link_travel_times.json',
+                'full_link_speeds':'./Data_Files/full_link_speeds.json',
+
                 'W_trips':'./Data_Files/W_trips.txt',
-                'W_traveltimes':'./Data_Files/W_travel_times.txt',
+                'W_speeds':'./Data_Files/W_speeds.txt',
                 'W_trips_seed':'./Data_Files/Seeded0,1/W_trips.txt',
-                'W_traveltimes_seed':'./Data_Files/Seeded0,1/W_travel_times.txt',
+                'W_speeds_seed':'./Data_Files/Seeded0,1/W_speeds.txt',
                 'HT_trips':'./Data_Files/HT_trips.txt',
-                'HT_traveltimes':'./Data_Files/HT_travel_times.txt',
-                'H_trips_seed':'./Data_Files/Seeded0,1/HT_trips.txt',
-                'H_traveltimes_seed':'./Data_Files/Seeded0,1/HT_travel_times.txt',
+                'HT_speeds':'./Data_Files/HT_speeds.txt',
+                'HT_trips_seed':'./Data_Files/Seeded0,1/HT_trips.txt',
+                'HT_speeds_seed':'./Data_Files/Seeded0,1/HT_speeds.txt',
                 'HT_trips_axed':'./Data_Files/HT_trips_axed.txt',
-                'HT_traveltimes_axed':'./Data_Files/HT_travel_times_axed.txt',
+                'HT_speeds_axed':'./Data_Files/HT_speeds_axed.txt',
                 'HT_trips_axed_seed':'./Data_Files/Seeded0,1/HT_trips_axed.txt',
-                'W_traveltimes_axed_seed':'./Data_Files/Seeded0,1/HT_travel_times_axed.txt',
+                'W_speeds_axed_seed':'./Data_Files/Seeded0,1/HT_speeds_axed.txt',
                 'random':'./Data_Files/Random_numbers.txt',
                 'data_trips_transpose':'../../data_trips_transpose.csv'}
 
@@ -45,8 +48,8 @@ filenames_cluster = {'links':'./scratch/links.csv',
                      'data_trips_transpose':'./scratch/data_trips_transpose.csv'}
 
 
-RANK = 50
-TRIPS = 1
+RANK = 100
+TRIPS = 0
 TOTAL_LINKS = 260855
 FULL_LINKS = 2302
 EMPTY_LINKS = 234892

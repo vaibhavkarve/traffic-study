@@ -1,6 +1,6 @@
 from Globals import *
 filenames = filenames_PC
- 
+
 
 def random_matrix(size, seed = None):
     from numpy.random import random, randint
@@ -48,7 +48,7 @@ def sort_WH(W0, H0):
         for j in range(len(H.T)):
             if H[i,j] != 0:
                 popularity[i] += 1./column_entries[j]
-
+    import numpy as np
     popularity, H, WT = zip(*[(pop,row_H,col_W) for (pop,row_H,col_W)
                               in sorted(zip(popularity,H0,W0.T),
                                         key=lambda pair: pair[0], reverse=True)])
@@ -57,7 +57,7 @@ def sort_WH(W0, H0):
     return W, H
         
 
-def find_signatures(data, rank=RANK, beta=0.1, threshold=0.2, seed_W=None,
+def find_signatures(data, rank=RANK, beta=0.1, threshold=0.20, seed_W=None,
                     seed_H=None):
     from Read_data import replace_placeholder
     from numpy import array, nanmean, dot, multiply, product, copy, identity
@@ -75,8 +75,8 @@ def find_signatures(data, rank=RANK, beta=0.1, threshold=0.2, seed_W=None,
         # diag(diag(A)) replaces all off-diagonal entries of A with 0.
         Term_1 = dot(D, H.T)
             
-        Term_2 = dot(multiply(dot(W, H),data_positions), H.T)+\
-                 dot(W,diag(diag(dot(W.T,dot(D,H.T)))))-\
+        Term_2 = dot(multiply(dot(W, H), data_positions), H.T) + \
+                 dot(W,diag(diag(dot(W.T,dot(D,H.T))))) - \
                  dot(W,diag(diag(dot(dot(W.T,multiply(\
                      data_positions,dot(W,H))),H.T))))
                  
@@ -84,7 +84,7 @@ def find_signatures(data, rank=RANK, beta=0.1, threshold=0.2, seed_W=None,
 
     def update_H(D, W, H):
         Term_3 = dot(W.T, D)
-        Term_4 = dot(W.T, multiply(dot(W, H),data_positions))\
+        Term_4 = dot(W.T, multiply(dot(W, H), data_positions)) \
                  + beta*dot(ones((rank,rank)), H)
         return multiply(multiply(H,Term_3), 1./Term_4)
 
@@ -99,7 +99,11 @@ def find_signatures(data, rank=RANK, beta=0.1, threshold=0.2, seed_W=None,
         print 'Initializing W and H...'
         W = random_matrix(product(W_shape), seed_W).reshape(W_shape)
         H = random_matrix(product(H_shape), seed_H).reshape(H_shape)
+
+        import numpy as np
+        W = np.divide(W, 250)
         print 'W, H chosen'
+
         iterations = 0
         quarts = [] # list of quartiles for each iteration
         diff_W = 100
@@ -108,6 +112,10 @@ def find_signatures(data, rank=RANK, beta=0.1, threshold=0.2, seed_W=None,
         errors = []
         W_mins = []
         W_maxs = []
+        sparsity =[]
+        Norms = []
+        Beta_factor = []
+        
         while abs(diff_W) + abs(diff_H) > threshold or iterations<200:
             W_new = update_W(D, W, H)
             H_new = update_H(D, W_new, H)
@@ -122,6 +130,8 @@ def find_signatures(data, rank=RANK, beta=0.1, threshold=0.2, seed_W=None,
             print 'diff_W = ', diff_W, ', diff_H = ', diff_H
 
             W, H = W_new, H_new
+            s=1./(product(H_shape))*sum(array(
+            [norm((coeffs-max(coeffs))/max(coeffs))**2 for coeffs in H.T]))
 
             # We calculate the relative error in percentage.
             error = norm(D-multiply(dot(W,H),data_positions))/norm(D)*100
@@ -129,6 +139,15 @@ def find_signatures(data, rank=RANK, beta=0.1, threshold=0.2, seed_W=None,
             iterations += 1
             errors.append(error)
             quarts.append(quartiles(H))
+            sparsity.append(s)
+            Norms.append(norm(D-multiply(dot(W,H), data_positions))**2)
+            Beta_factor.append(beta*sum([norm(H[:,l],1)**2 for l in range(2302)]))
+        plot(Norms)
+        plot(Beta_factor)
+        plot(array(Norms) + array(Beta_factor))
+        plot(array(Norms) - array(Beta_factor))    
+        show()
+        
 
         plot(W_maxs)
         plot(W_mins)
@@ -139,10 +158,12 @@ def find_signatures(data, rank=RANK, beta=0.1, threshold=0.2, seed_W=None,
         show()
 
         W, H = sort_WH(W, H)
-        print 'Sparsity=' , 1./(product(H_shape))*sum(array(
-            [norm((coeffs-max(coeffs))/max(coeffs))**2 for coeffs in H.T]))
+        
         quarts = array(quarts).T
         [plot(quarts[i],'o-') for i in range(5)]
+        show()
+
+        plot(sparsity)
         show()
         
         return W, H, error
@@ -153,10 +174,12 @@ def find_signatures(data, rank=RANK, beta=0.1, threshold=0.2, seed_W=None,
 
 from Read_data import read_full_link_json
 from numpy import savetxt
+from numpy import loadtxt
 full_link_ids, D = read_full_link_json() # Reads trips or traveltimes
-                                         # depending on Globals.TRIPS value 
-print 'Full_link data has been read'
+# depending on Globals.TRIPS value 
 
+print 'Full_link data has been read'
+#print np.nanmin(D.flatten())
 if SEEDED == 1:
     seed_W = 0
     seed_H = 1
@@ -176,11 +199,11 @@ if TRIPS == 1:
     print 'HT_trips written'
     savetxt(filenames['HT_trips_axed'], axe_H(H.T))
     print 'HT_trips_axed written'
-elif TRIPS == 0:
-    savetxt(filenames['W_traveltimes'], W)
-    print 'W_travel_times written'
-    savetxt(filenames['HT_traveltimes'], H.T)
-    print 'HT_travel_times written'
-    savetxt(filenames['HT_traveltimes_axed'], axe_H(H.T))
-    print 'HT_travel_times_axed written'
 
+elif TRIPS == 0:
+    savetxt(filenames['W_speeds'], W)
+    print 'W_speeds written'
+    savetxt(filenames['HT_speeds'], H.T)
+    print 'HT_speeds written'
+    savetxt(filenames['HT_speeds_axed'], axe_H(H.T))
+    print 'HT_speeds_axed written'
