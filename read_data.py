@@ -1,4 +1,5 @@
 ''' Preliminary functions. These will get called by the main functions.'''
+import config
 
 def csv_to_dict(filename):
     # * Reads a .csv file and returns a list of dictionaries, one for each line
@@ -208,24 +209,24 @@ def write_full_link_data():
 
 
 
-def read_full_link_json():
+def read_full_link_json(filenames):
     # Use this when you wish to read the array for only 2302 full links.
     import json
     import numpy as np
     full_link_ids = np.loadtxt(filenames['full_link_ids'], dtype='int')
-    if TRIPS == 0:
+    if config.TRIPS == 0:
         filename = filenames['full_link_speeds']
         print('Speeds')
-    elif TRIPS == 1:
+    elif config.TRIPS == 1:
         filename = filenames['full_link_trips']
         print('Trips')    
     else:
         print('Error: invalid argument')
         return None
     V = json.load(open(filename, 'rb'))
-    assert len(full_link_ids) == FULL_LINKS
-    assert len(V) == HOURS_IN_YEAR
-    assert len(V[0]) == FULL_LINKS
+    assert len(full_link_ids) == config.FULL_LINKS
+    assert len(V) == config.HOURS_IN_YEAR
+    assert len(V[0]) == config.FULL_LINKS
     return list(full_link_ids), np.array(V)
 
 
