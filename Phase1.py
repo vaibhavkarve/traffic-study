@@ -1,3 +1,6 @@
+''' This runs Phase1 on data using L1-normalization condition for W and also by taking into account the signs of lambda_n'''
+
+
 from read_data import replace_placeholder
 import numpy as np
 import numpy.linalg as lin
@@ -82,14 +85,16 @@ def SNMF(data, filenames, rank, beta = 0.1, threshold = 0.20, seed_W = None, see
     nonzeros = ~np.isnan(data)    
 
     def update_W(D, W, H):
-        Term_1 = D@H.T
-        Term_2 = N(W@H)@H.T + W@d((W.T@(D - N(W@H)))@H.T)
-        return m(m(W,Term_1), 1./Term_2)
+        lambdas = np.ones((len(D),1))@np.diag(W.T@(D - N(W@H))@H.T).reshape(1,rank)
+        Term_1 = D@H.T - np.select([lambdas < 0], [lambdas])
+        Term_2 = N(W@H)@H.T + np.select([lambdas >= 0], [lambdas])
+        return m(m(W,Term_1), 1./(Term_2))
 
     def update_H(D, W, H):
         Term_3 = W.T@D
         Term_4 = W.T@N(W@H) + beta*np.ones((rank,rank))@H
         return m(m(H,Term_3), 1./Term_4)
+    
 
     def quartiles(H):
         H2 = sorted(H.flatten())
@@ -122,6 +127,8 @@ def SNMF(data, filenames, rank, beta = 0.1, threshold = 0.20, seed_W = None, see
         W_new = update_W(D, W, H)
         H_new = update_H(D, W_new, H)
 
+        #print(W_new.min(), H_new.min())
+        print(W_new.max(), H_new.max())
         W_mins.append(W_new.min())
         W_maxs.append(W_new.max())
         diff.append((diff_W, diff_H))
@@ -129,7 +136,7 @@ def SNMF(data, filenames, rank, beta = 0.1, threshold = 0.20, seed_W = None, see
         diff_W = lin.norm(W_new - W)/lin.norm(W)*100
         diff_H = lin.norm(H_new - H)/lin.norm(H)*100
 
-        print('diff_W = ', diff_W, ', diff_H = ', diff_H)
+        #print('diff_W = ', diff_W, ', diff_H = ', diff_H)
 
         W, H = W_new, H_new
 
@@ -142,6 +149,7 @@ def SNMF(data, filenames, rank, beta = 0.1, threshold = 0.20, seed_W = None, see
         sparsity.append(sparsity_metric(H))
         Norms.append(lin.norm(D - N(W@H))**2)
         Beta_factor.append(beta*sum([lin.norm(H[:,l],1)**2 for l in range(W.shape[1])]))
+        
    
     plt.plot(Norms)
     plt.plot(Beta_factor)
