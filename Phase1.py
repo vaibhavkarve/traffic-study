@@ -86,13 +86,13 @@ def SNMF(data, filenames, rank, beta = 0.1, threshold = 0.20, seed_W = None, see
 
     def update_W(D, W, H):
         lambdas = d(W.T@(D - N(W@H))@H.T)  # This is a rank*rank matrix with only lambda_n on the diagonals
-        Term_1 = D@H.T - np.ones(W.shape)@np.select([lambdas < 0], [lambdas])
-        Term_2 = N(W@H)@H.T + np.ones(W.shape)@np.select([lambdas >= 0], [lambdas])
+        Term_1 = D@H.T - W@np.select([lambdas < 0], [lambdas])
+        Term_2 = N(W@H)@H.T + W@np.select([lambdas >= 0], [lambdas])
         return m(m(W,Term_1), 1./(Term_2))
 
     def update_H(D, W, H):
         Term_3 = W.T@D
-        Term_4 = W.T@N(W@H) + 0.5*beta*np.ones(H.shape)
+        Term_4 = W.T@N(W@H) + beta*np.ones((rank,rank))@H
         return m(m(H,Term_3), 1./Term_4)
     
 
