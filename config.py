@@ -7,8 +7,8 @@ def generate_filenames(path, path_for_data=None):
     if path_for_data is None:
         path_for_data = path
     filenames = {# Raw data files
-                 'links':                path_for_data + 'links.csv',
-                 'nodes':                path_for_data + 'nodes.csv',
+                 'links':                path + 'links.csv',
+                 'nodes':                path + 'nodes.csv',
                  'raw_data':             path_for_data + 'travel_times_2011.csv',
                  'data_coo_form':        path_for_data + 'data_coo_form.txt',
                  'data_trips':           path_for_data + 'data_trips.csv',

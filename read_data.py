@@ -228,8 +228,6 @@ def read_full_link_json(filenames):
     assert len(V) == config.HOURS_IN_YEAR
     assert len(V[0]) == config.FULL_LINKS
     return list(full_link_ids), np.array(V)
-
-
 from numpy import nan
 def replace_placeholder(data, placeholder = nan, value = 0.):
     from numpy import isnan, array

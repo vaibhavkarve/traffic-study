@@ -3,24 +3,31 @@
 
 from read_data import replace_placeholder
 import numpy as np
+import pandas as pd
 import numpy.linalg as lin
 import numpy.random as rand
 import math
 import matplotlib.pyplot as plt
+import logging
+import sys
+
+
+logger = logging.getLogger(__name__)
 
 
 ## Useful matrix operations:
 def m(A,B): return np.multiply(A,B)
 def d(A): return np.diag(np.diag(A))  # d(A) replaces all off-diagonal entries of A with 0.
-def N(A): return m(A, nonzeros)
+def N(A): return m(A, NONZEROS)       # NONZEROS is a global variable.
 
 
-def random_array(size, filenames, seed = None):
-    # * Creates a 1-D array of specified size and populates it with random
-    #   numbers between 0 and 1.
+def random_array(shape, filenames, seed = None):
+    # * Creates a numpy.array of specified shape and populates it with random
+    #   numbers between 1 and 2.
     # * Reads numbers from pre-generated file: filenames['random'] in order
     #   to save time.
     # * seed = 1 will ensure that the same random_array is generated everytime.
+    size = np.prod(shape)
     with open(filenames['random'], 'rb') as file1:
         assert size%259993 != 0         # To ensure staggeredness of filesize
         matrix = [float(line[:-1])+1 for line in file1]
@@ -28,7 +35,8 @@ def random_array(size, filenames, seed = None):
         start = rand.randint(0,len(matrix)-1) # start at a random position in the file
         matrix = matrix*(size//len(matrix)+1)
         matrix = matrix[start:] + matrix[:start]
-    return np.array(matrix[:size], dtype = np.float64)
+    return np.array(matrix[:size]).reshape(shape)
+    
 
 
 def axe_H(HT0):
@@ -76,18 +84,18 @@ def sparsity_metric(H):
 
 
 
-def SNMF(data, filenames, rank, beta = 0.1, threshold = 0.20, seed_W = None, seed_H = None):    
+def SNMF(dataframe, filenames, rank, beta = 0.1, threshold = 0.20, seed_W = None, seed_H = None):    
 
-    print('Rank=', rank, 'Beta=', beta, 'Threshold=', threshold)
+    logger.info('Rank= %s, Beta= %s, Threshold= %s', rank, beta, threshold)
 
-    D = replace_placeholder(data, value = 0.0)
-    global nonzeros
-    nonzeros = ~np.isnan(data)    
-
+    D = dataframe.fillna(0.0)
+    global NONZEROS
+    NONZEROS = pd.notnull(dataframe)
+    
     def update_W(D, W, H):
         lambdas = d(W.T@(D - N(W@H))@H.T)  # This is a rank*rank matrix with only lambda_n on the diagonals
-        Term_1 = D@H.T - W@np.select([lambdas < 0], [lambdas])
-        Term_2 = N(W@H)@H.T + W@np.select([lambdas >= 0], [lambdas])
+        Term_1 = D@H.T - np.ones((len(D),len(D)))@W@np.select([lambdas < 0], [lambdas])
+        Term_2 = N(W@H)@H.T + np.ones((len(D),len(D)))@W@np.select([lambdas >= 0], [lambdas])
         return m(m(W,Term_1), 1./(Term_2))
 
     def update_H(D, W, H):
@@ -102,77 +110,78 @@ def SNMF(data, filenames, rank, beta = 0.1, threshold = 0.20, seed_W = None, see
         return H2[0], H2[quarter], H2[quarter*2], H2[quarter*3], H2[-1] 
 
 
-    W_shape = (len(D), rank)
-    H_shape = (rank, len(D.T))
-    print('Initializing W and H...')
-    W = random_array(np.product(W_shape), filenames, seed_W).reshape(W_shape)
-    H = random_array(np.product(H_shape), filenames, seed_H).reshape(H_shape)
-
-    W = np.divide(W, 250)
-    print('W, H chosen')
+    W_shape = (D.shape[0], rank)
+    H_shape = (rank, D.shape[1])
+    logger.info('Initializing W and H...')
+    W = random_array(W_shape, filenames, seed_W)
+    H = random_array(H_shape, filenames, seed_H)
+    
+    logger.info('W, H chosen')
 
     iterations = 0
-    quarts = [] # list of quartiles for each iteration
+    results = pd.DataFrame({'quarts': [], # list of quartiles of H for each iteration
+                            'diff_W': [],
+                            'diff_H': [],
+                            'error': [],
+                            'W_min': [],
+                            'W_max': [],
+                            'sparsity': [],
+                            'col_sum_mean': []})
     diff_W = 100
     diff_H = 100
-    diff = []
-    errors = []
-    W_mins = []
-    W_maxs = []
-    sparsity = []
-    Norms = []
-    Beta_factor = []
-        
+    
+    D = D.values # DataFrame to numpy.array
+    
     while abs(diff_W) + abs(diff_H) > threshold or iterations<200:
         W_new = update_W(D, W, H)
         H_new = update_H(D, W_new, H)
+        
 
-        #print(W_new.min(), H_new.min())
-        print(W_new.max(), H_new.max())
-        W_mins.append(W_new.min())
-        W_maxs.append(W_new.max())
-        diff.append((diff_W, diff_H))
+        # Check for nonnegativity of W
+        try: assert(W_new.min()>0)
+        except AssertionError:
+            logger.critical('AssertionError: W is not nonnegative!')
+            logger.critical('%s out of %s entries of W are negative', np.sum(W_new <= 0), np.product(W_shape))
+            raise
 
+        # Check for nonnegativity of H
+        try: assert(H_new.min()>0)
+        except AssertionError:
+            logger.critical('AssertionError: H is not nonnegative!')
+            logger.critical('%s out of %s entries of H are negative', np.sum(H_new <= 0), np.product(H_shape))
+            raise
+
+        
+        W_min = W_new.min()
+        W_max = W_new.max()
         diff_W = lin.norm(W_new - W)/lin.norm(W)*100
         diff_H = lin.norm(H_new - H)/lin.norm(H)*100
-
-        #print('diff_W = ', diff_W, ', diff_H = ', diff_H)
 
         W, H = W_new, H_new
 
         # We calculate the relative error in percentage.
         error = lin.norm(D - N(W@H))/lin.norm(D)*100
-        print('Iteration ', iterations, ', Error = ', error)
+        
+        logger.info('Iteration= %s, Error= %s', iterations, error)
         iterations += 1
-        errors.append(error)
-        quarts.append(quartiles(H))
-        sparsity.append(sparsity_metric(H))
-        Norms.append(lin.norm(D - N(W@H))**2)
-        Beta_factor.append(beta*sum([lin.norm(H[:,l],1)**2 for l in range(W.shape[1])]))
         
-   
-    plt.plot(Norms)
-    plt.plot(Beta_factor)
-    plt.plot(np.array(Norms) + np.array(Beta_factor))
-    plt.plot(np.array(Norms) - np.array(Beta_factor))    
-    plt.show()
+        results = results.append({'quarts': quartiles(H),
+                                  'diff_W': diff_W,
+                                  'diff_H': diff_H,
+                                  'error': error,
+                                  'W_min': W_min,
+                                  'W_max': W_max,
+                                  'sparsity': sparsity_metric(H),
+                                  'col_sum_mean': np.mean(np.sum(W,axis=0))}, ignore_index = True, )
+            
         
-
-    plt.plot(W_maxs)
-    plt.plot(W_mins)
-    plt.show()
-
-    [plt.plot([entry[i] for entry in diff[3:]], 'o-') for i in range(2)]
-    plt.plot(errors[3:],'o-')
-    plt.show()
-
     W, H = sort_WH(W, H)
-    
-    quarts = np.array(quarts).T
-    [plt.plot(quarts[i],'o-') for i in range(5)]
-    plt.show()
+            
+    return pd.DataFrame(W), pd.DataFrame(H), results
 
-    plt.plot(sparsity)
-    plt.show()
-        
-    return W, H, error
+
+
+
+
+
+
