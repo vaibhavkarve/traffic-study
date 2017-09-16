@@ -1,0 +1,82 @@
+2017-09-16 16:29:22,386 - root - INFO - Filenames have been loaded
+2017-09-16 16:29:22,390 - root - DEBUG - links
+2017-09-16 16:29:22,390 - root - DEBUG - nodes
+2017-09-16 16:29:22,391 - root - DEBUG - raw_data
+2017-09-16 16:29:22,391 - root - DEBUG - data_coo_form
+2017-09-16 16:29:22,391 - root - DEBUG - data_trips
+2017-09-16 16:29:22,391 - root - DEBUG - data_traveltimes
+2017-09-16 16:29:22,391 - root - DEBUG - data_trips_transpose
+2017-09-16 16:29:22,391 - root - DEBUG - full_link_ids
+2017-09-16 16:29:22,392 - root - DEBUG - empty_link_ids
+2017-09-16 16:29:22,392 - root - DEBUG - full_link_trips
+2017-09-16 16:29:22,392 - root - DEBUG - full_link_traveltimes
+2017-09-16 16:29:22,392 - root - DEBUG - full_link_speeds
+2017-09-16 16:29:22,392 - root - DEBUG - random
+2017-09-16 16:29:22,392 - root - DEBUG - W_trips
+2017-09-16 16:29:22,393 - root - DEBUG - W_speeds
+2017-09-16 16:29:22,393 - root - DEBUG - W_trips_seed
+2017-09-16 16:29:22,393 - root - DEBUG - W_speeds_seed
+2017-09-16 16:29:22,393 - root - DEBUG - H_trips
+2017-09-16 16:29:22,393 - root - DEBUG - H_speeds
+2017-09-16 16:29:22,393 - root - DEBUG - H_trips_seed
+2017-09-16 16:29:22,394 - root - DEBUG - H_speeds_seed
+2017-09-16 16:29:22,394 - root - DEBUG - H_trips_axed
+2017-09-16 16:29:22,394 - root - DEBUG - H_speeds_axed
+2017-09-16 16:29:22,394 - root - DEBUG - H_trips_axed_seed
+2017-09-16 16:29:22,394 - root - DEBUG - W_speeds_axed_seed
+2017-09-16 16:29:22,394 - root - INFO - Constants have been loaded
+2017-09-16 16:29:22,396 - root - DEBUG - EMPTY_LINKS
+2017-09-16 16:29:22,396 - root - DEBUG - FULL_LINKS
+2017-09-16 16:29:22,396 - root - DEBUG - HOURS_IN_YEAR
+2017-09-16 16:29:22,396 - root - DEBUG - MID_LINKS
+2017-09-16 16:29:22,396 - root - DEBUG - RANK
+2017-09-16 16:29:22,396 - root - DEBUG - SEEDED
+2017-09-16 16:29:22,397 - root - DEBUG - TOTAL_LINKS
+2017-09-16 16:29:22,397 - root - DEBUG - TRIPS
+2017-09-16 16:29:22,397 - root - DEBUG - __builtins__
+2017-09-16 16:29:22,397 - root - DEBUG - __cached__
+2017-09-16 16:29:22,397 - root - DEBUG - __doc__
+2017-09-16 16:29:22,397 - root - DEBUG - __file__
+2017-09-16 16:29:22,397 - root - DEBUG - __loader__
+2017-09-16 16:29:22,397 - root - DEBUG - __name__
+2017-09-16 16:29:22,397 - root - DEBUG - __package__
+2017-09-16 16:29:22,398 - root - DEBUG - __spec__
+2017-09-16 16:29:22,398 - root - DEBUG - generate_filenames
+2017-09-16 16:29:27,602 - root - INFO - Full_link data has been read
+2017-09-16 16:29:27,603 - Phase1 - INFO - Rank= 50, Beta= 1e-05, Threshold= 0.2
+2017-09-16 16:29:27,840 - Phase1 - INFO - Initializing W and H...
+2017-09-16 16:29:28,197 - Phase1 - INFO - W, H chosen
+2017-09-16 16:29:30,476 - Phase1 - INFO - Iteration= 0, Error= 49.7183895477
+2017-09-16 16:29:32,982 - Phase1 - INFO - Iteration= 1, Error= 48.0324813424
+2017-09-16 16:29:35,485 - Phase1 - INFO - Iteration= 2, Error= 48.0031085544
+2017-09-16 16:29:38,045 - Phase1 - INFO - Iteration= 3, Error= 47.9671853406
+2017-09-16 16:29:40,697 - Phase1 - INFO - Iteration= 4, Error= 47.9256330076
+2017-09-16 16:29:43,320 - Phase1 - INFO - Iteration= 5, Error= 47.8791742078
+2017-09-16 16:29:45,827 - Phase1 - INFO - Iteration= 6, Error= 47.8263696163
+2017-09-16 16:29:48,332 - Phase1 - INFO - Iteration= 7, Error= 47.7646389608
+2017-09-16 16:29:50,888 - Phase1 - INFO - Iteration= 8, Error= 47.6903686639
+2017-09-16 16:29:53,347 - Phase1 - INFO - Iteration= 9, Error= 47.5987694462
+2017-09-16 16:29:55,832 - Phase1 - INFO - Iteration= 10, Error= 47.4836725674
+2017-09-16 16:29:58,398 - Phase1 - INFO - Iteration= 11, Error= 47.3373884268
+2017-09-16 16:30:00,881 - Phase1 - INFO - Iteration= 12, Error= 47.1507936742
+2017-09-16 16:30:03,312 - Phase1 - INFO - Iteration= 13, Error= 46.9138909245
+2017-09-16 16:30:05,783 - Phase1 - INFO - Iteration= 14, Error= 46.6171299434
+2017-09-16 16:30:08,211 - Phase1 - INFO - Iteration= 15, Error= 46.2536582246
+2017-09-16 16:30:10,628 - Phase1 - INFO - Iteration= 16, Error= 45.8222119034
+2017-09-16 16:30:13,055 - Phase1 - INFO - Iteration= 17, Error= 45.3295717476
+2017-09-16 16:30:15,503 - Phase1 - INFO - Iteration= 18, Error= 44.7909325929
+2017-09-16 16:30:17,888 - Phase1 - INFO - Iteration= 19, Error= 44.2271304373
+2017-09-16 16:30:20,302 - Phase1 - INFO - Iteration= 20, Error= 43.6596113141
+2017-09-16 16:30:22,694 - Phase1 - INFO - Iteration= 21, Error= 43.1056813594
+2017-09-16 16:30:25,128 - Phase1 - INFO - Iteration= 22, Error= 42.5761555959
+2017-09-16 16:30:27,686 - Phase1 - INFO - Iteration= 23, Error= 42.0755992851
+2017-09-16 16:30:30,303 - Phase1 - INFO - Iteration= 24, Error= 41.6039850575
+2017-09-16 16:30:32,809 - Phase1 - INFO - Iteration= 25, Error= 41.1585681955
+2017-09-16 16:30:35,486 - Phase1 - INFO - Iteration= 26, Error= 40.7353924724
+2017-09-16 16:30:38,076 - Phase1 - INFO - Iteration= 27, Error= 40.3303233096
+2017-09-16 16:30:40,578 - Phase1 - INFO - Iteration= 28, Error= 39.9396915931
+2017-09-16 16:30:43,012 - Phase1 - INFO - Iteration= 29, Error= 39.5606453852
+2017-09-16 16:30:45,592 - Phase1 - INFO - Iteration= 30, Error= 39.1912767875
+2017-09-16 16:30:48,164 - Phase1 - INFO - Iteration= 31, Error= 38.8305761326
+2017-09-16 16:30:50,750 - Phase1 - INFO - Iteration= 32, Error= 38.4782696852
+2017-09-16 16:30:53,495 - Phase1 - INFO - Iteration= 33, Error= 38.1346008902
