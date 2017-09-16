@@ -1,4 +1,5 @@
 ''' Preliminary functions. These will get called by the main functions.'''
+import config
 
 def csv_to_dict(filename):
     # * Reads a .csv file and returns a list of dictionaries, one for each line
@@ -73,16 +74,17 @@ def read_data_csv():
     return rows, columns_offset_by_one, trips, traveltimes
 
 
-def write_data_coo((rows, columns_offset_by_one, trips, traveltimes)):
+#def write_data_coo((rows, columns_offset_by_one, trips, traveltimes)):
+def write_data_coo(rows, columns_offset_by_one, trips, traveltimes):
     with open(filenames['data_coo_form'],'wb') as writefile:
-            rows = ','.join(map(str, rows))
-            columns_offset_by_one = ','.join(columns_offset_by_one)
-            trips = ','.join(trips)
-            traveltimes = ','.join(traveltimes)
-            writefile.write('rows='+rows+'\n')
-            writefile.write('columns_offset_by_one='+columns_offset_by_one+'\n')
-            writefile.write('trips='+trips+'\n')
-            writefile.write('travel_times='+traveltimes+'\n')
+        rows = ','.join(map(str, rows))
+        columns_offset_by_one = ','.join(columns_offset_by_one)
+        trips = ','.join(trips)
+        traveltimes = ','.join(traveltimes)
+        writefile.write('rows='+rows+'\n')
+        writefile.write('columns_offset_by_one='+columns_offset_by_one+'\n')
+        writefile.write('trips='+trips+'\n')
+        writefile.write('travel_times='+traveltimes+'\n')
     return None
 
 
@@ -97,15 +99,15 @@ def write_data_array():
         rows, columns_offset_by_one, trips, traveltimes = readfile.readlines()
 
     rows = map(int, rows[5:].split(','))
-    print 'Rows converted to ints,',time()-time0
+    print('Rows converted to ints,', time()-time0)
     # columns_offset_by_one start at 1 because they are link_ids.
     # columns start at 0.
     columns_offset_by_one = map(int, columns_offset_by_one[22:].split(','))
-    print 'Columns converted to ints,',time()-time0
+    print('Columns converted to ints,', time()-time0)
     trips = trips[6:].rstrip().split(',')
-    print 'Trips were read,',time()-time0
+    print('Trips were read,', time()-time0)
     traveltimes = traveltimes[13:].rstrip().split(',')
-    print 'Travel times were read,',time()-time0
+    print('Travel times were read,', time()-time0)
     # We reverse all the arrays so that we can write data to the new csv file
     # starting at hour 0 instead of 8759.
     rows.reverse()
@@ -140,7 +142,7 @@ def find_full_links():
     from csv import reader
     from numpy import array, savetxt
     reader = reader(open(filenames['data_trips'], 'rb'))
-    print 'data_trips.csv is opened'
+    print('data_trips.csv is opened')
     potential_full_links = range(1, TOTAL_LINKS + 1+1)
     missing_entries = [0 for i in potential_full_links]
     for line in reader:
@@ -151,7 +153,7 @@ def find_full_links():
                 defaulters.append(link_id)
         potential_full_links = [i for i in potential_full_links
                                 if i not in defaulters]
-        print reader.line_num, len(potential_full_links)
+        print(reader.line_num, len(potential_full_links))
     savetxt(filenames['full_link_ids'], array(potential_full_links),
             fmt='%d')
     return potential_full_links
@@ -161,7 +163,7 @@ def find_empty_links():
     from csv import reader
     from numpy import array, savetxt
     reader = reader(open(filenames['data_trips'], 'rb'))
-    print 'data_trips.csv is opened'
+    print('data_trips.csv is opened')
     potential_empty_links = range(1, TOTAL_LINKS + 1+1)
     entries = [0 for i in potential_empty_links]
     for line in reader:
@@ -172,7 +174,7 @@ def find_empty_links():
                 defaulters.append(link_id)
         potential_empty_links = [i for i in potential_empty_links
                                 if i not in defaulters]
-        print reader.line_num, len(potential_empty_links)
+        print(reader.line_num, len(potential_empty_links))
     savetxt(filenames['empty_link_ids'], array(potential_empty_links),
             fmt='%d')
     return potential_empty_links
@@ -191,7 +193,7 @@ def write_full_link_data():
         for line in reader:            
             V.append(map(float, [line[i-1] if bool(line[i-1]) else nan
                                  for i in full_link_ids]))
-            print reader.line_num
+            print(reader.line_num)
     dump(V, open(filenames['full_link_trips'], 'wb'))
 
     V = []
@@ -200,33 +202,32 @@ def write_full_link_data():
         for line in reader:
             V.append(map(float, [line[i-1] if bool(line[i-1]) else nan
                                  for i in full_link_ids]))
-            print reader.line_num
+            print(reader.line_num)
     dump(V, open(filenames['full_link_traveltimes'], 'wb'))
     
     return None
 
 
-# Use the following when you wish to read the array for only 2302 full links.
-def read_full_link_json():
-    from json import load
-    from numpy import array, loadtxt
-    full_link_ids = loadtxt(filenames['full_link_ids'], dtype='int')
-    if TRIPS == 0:
+
+def read_full_link_json(filenames):
+    # Use this when you wish to read the array for only 2302 full links.
+    import json
+    import numpy as np
+    full_link_ids = np.loadtxt(filenames['full_link_ids'], dtype='int')
+    if config.TRIPS == 0:
         filename = filenames['full_link_speeds']
-        print 'Speeds'
-    elif TRIPS == 1:
+        print('Speeds')
+    elif config.TRIPS == 1:
         filename = filenames['full_link_trips']
-        print 'Trips'    
+        print('Trips')    
     else:
         print('Error: invalid argument')
         return None
-    V = load(open(filename, 'rb'))
-    assert len(full_link_ids) == FULL_LINKS
-    assert len(V) == HOURS_IN_YEAR
-    assert len(V[0]) == FULL_LINKS
-    return list(full_link_ids), array(V)
-
-
+    V = json.load(open(filename, 'rb'))
+    assert len(full_link_ids) == config.FULL_LINKS
+    assert len(V) == config.HOURS_IN_YEAR
+    assert len(V[0]) == config.FULL_LINKS
+    return list(full_link_ids), np.array(V)
 from numpy import nan
 def replace_placeholder(data, placeholder = nan, value = 0.):
     from numpy import isnan, array
@@ -253,7 +254,7 @@ def autocorrelation(data):
         autocorr = nanmean([multiply(Deviations[t],Deviations[t+24*period])
                             for t in range(len(V)-24*period)])/sigma2
         autocorr_dict[period] = autocorr
-        print period
+        print(period)
 
     # Peaks in plot correspond to high autocorrelation i.e. high
     # periodicity trend.
@@ -283,7 +284,7 @@ def autocorrelation_hourly(data):
         autocorr = nanmean([multiply(Deviations[t],Deviations[t+period])
                             for t in range(len(V)-period)])/sigma2
         autocorr_dict[period] = autocorr
-        print period
+        print(period)
 
     # Peaks in plot correspond to high autocorrelation i.e. high
     # periodicity trend.
@@ -309,11 +310,11 @@ def find_Phase2_links():
     for i in range(1, TOTAL_LINKS+1+1):
         if i < empty_link_ids[j]:
             Phase2_links.append(i)
-            print i
+            print(i)
         elif i == empty_link_ids[j]:
             j +=1
         else:
-            'Error!'
+            print('Error!')
         # We don't have to worry about tail-end because last empty_link and
         # last total_link are the same (i.e. 260856th)
     assert len(Phase2_links) == TOTAL_LINKS+1 - (EMPTY_LINKS+1)
