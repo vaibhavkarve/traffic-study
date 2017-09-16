@@ -24,18 +24,18 @@ def generate_filenames(path, path_for_data=None):
 
                  # Inputs and Outputs of Phase1.py
                  'random':             path + 'Random_numbers.txt',
-                 'W_trips':            path + 'W_trips.txt',
-                 'W_speeds':           path + 'W_speeds.txt',
-                 'W_trips_seed':       path + 'Seeded0,1/W_trips.txt',
-                 'W_speeds_seed':      path + 'Seeded0,1/W_speeds.txt',
-                 'HT_trips':           path + 'HT_trips.txt',
-                 'HT_speeds':          path + 'HT_speeds.txt',
-                 'HT_trips_seed':      path + 'Seeded0,1/HT_trips.txt',
-                 'HT_speeds_seed':     path + 'Seeded0,1/HT_speeds.txt',
-                 'HT_trips_axed':      path + 'HT_trips_axed.txt',
-                 'HT_speeds_axed':     path + 'HT_speeds_axed.txt',
-                 'HT_trips_axed_seed': path + 'Seeded0,1/HT_trips_axed.txt',
-                 'W_speeds_axed_seed': path + 'Seeded0,1/HT_speeds_axed.txt'}
+                 'W_trips':            path + 'W_trips.csv',
+                 'W_speeds':           path + 'W_speeds.csv',
+                 'W_trips_seed':       path + 'Seeded0,1/W_trips.csv',
+                 'W_speeds_seed':      path + 'Seeded0,1/W_speeds.csv',
+                 'H_trips':           path + 'H_trips.csv',
+                 'H_speeds':          path + 'H_speeds.csv',
+                 'H_trips_seed':      path + 'Seeded0,1/H_trips.csv',
+                 'H_speeds_seed':     path + 'Seeded0,1/H_speeds.csv',
+                 'H_trips_axed':      path + 'H_trips_axed.csv',
+                 'H_speeds_axed':     path + 'H_speeds_axed.csv',
+                 'H_trips_axed_seed': path + 'Seeded0,1/H_trips_axed.csv',
+                 'W_speeds_axed_seed': path + 'Seeded0,1/H_speeds_axed.csv'}
     return filenames
 
 

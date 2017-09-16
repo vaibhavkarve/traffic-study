@@ -23,14 +23,14 @@ def N(A): return m(A, NONZEROS)       # NONZEROS is a global variable.
 
 def random_array(shape, filenames, seed = None):
     # * Creates a numpy.array of specified shape and populates it with random
-    #   numbers between 1 and 2.
+    #   numbers between 0 and 1.
     # * Reads numbers from pre-generated file: filenames['random'] in order
     #   to save time.
     # * seed = 1 will ensure that the same random_array is generated everytime.
     size = np.prod(shape)
     with open(filenames['random'], 'rb') as file1:
         assert size%259993 != 0         # To ensure staggeredness of filesize
-        matrix = [float(line[:-1])+1 for line in file1]
+        matrix = [float(line[:-1]) for line in file1]
         rand.seed(seed)
         start = rand.randint(0,len(matrix)-1) # start at a random position in the file
         matrix = matrix*(size//len(matrix)+1)
@@ -39,21 +39,21 @@ def random_array(shape, filenames, seed = None):
     
 
 
-def axe_H(HT0):
-    # Makes HT sparser by flattening out things below half-peak height in
-    # each row of HT.
+def axe_H(H, relative_cutoff=0.5):
+    # Makes H sparser by flattening out things below half-peak height in
+    # each column of H.
+    
+    def axe_column(column):
+        peak = max(column)
+        return column.mask(column < peak*relative_cutoff, other = 0.0)
 
-    HT = np.copy(HT0)
-    for i in range(len(HT0)):
-        peak  = max(HT0[i])
-        HT[i] = [entry if entry>peak/2. else 0. for entry in HT0[i]]
-    return np.array(HT)
+    return H.apply(axe_column, axis=0)
 
 
 def sort_WH(W0, H0):
     # Sort H and W according to decreasing order of signature popularity
-    # which is calculted using H obtained from axe_H().
-    H = axe_H(H0.T).T
+    # which is calculated using H obtained from axe_H().
+    H = axe_H(pd.DataFrame(H0)).values()
     column_entries = [0 for i in range(len(H.T))] # list of length 2302
     for i in range(len(H)): # i varies from 0 to 49
         for j in range(len(H.T)): # j varies from 0 to 2301
@@ -78,10 +78,11 @@ def sort_WH(W0, H0):
         
 
 def sparsity_metric(H):
-    numer = sum(np.array([lin.norm((coeffs-max(coeffs))/max(coeffs))**2 for coeffs in H.T]))
-    denom = (np.product(H.shape))
-    return numer/denom
-
+    def sparsity_column(column):
+        column = (column - column.max())/column.max()
+        column = column**2
+        return np.sum(column)
+    return sum([sparsity_column(i) for i in H.T])/np.product(H.shape)
 
 
 def SNMF(dataframe, filenames, rank, beta = 0.1, threshold = 0.20, seed_W = None, seed_H = None):    
@@ -94,14 +95,18 @@ def SNMF(dataframe, filenames, rank, beta = 0.1, threshold = 0.20, seed_W = None
     
     def update_W(D, W, H):
         lambdas = d(W.T@(D - N(W@H))@H.T)  # This is a rank*rank matrix with only lambda_n on the diagonals
-        Term_1 = D@H.T - np.ones((len(D),len(D)))@W@np.select([lambdas < 0], [lambdas])
-        Term_2 = N(W@H)@H.T + np.ones((len(D),len(D)))@W@np.select([lambdas >= 0], [lambdas])
-        return m(m(W,Term_1), 1./(Term_2))
+        Term_1 = D@H.T - np.ones((len(D),len(D)))@W@np.select([lambdas < 0.], [lambdas])
+        Term_2 = N(W@H)@H.T + np.ones((len(D),len(D)))@W@np.select([lambdas >= 0.], [lambdas])
+        W = m(m(W,Term_1), 1./(Term_2))
+        W = np.select([W > 10**(-30)], [W], default=10**(-30))    ## Bumping values back up to epsilon
+        return W
 
     def update_H(D, W, H):
         Term_3 = W.T@D
         Term_4 = W.T@N(W@H) + beta*np.ones((rank,rank))@H
-        return m(m(H,Term_3), 1./Term_4)
+        H = m(m(H,Term_3), 1./Term_4)
+        H = np.select([H > 10**(-30)], [H], default=10**(-30))
+        return H
     
 
     def quartiles(H):
@@ -109,12 +114,20 @@ def SNMF(dataframe, filenames, rank, beta = 0.1, threshold = 0.20, seed_W = None
         quarter = (rank*len(D.T)-1)//4
         return H2[0], H2[quarter], H2[quarter*2], H2[quarter*3], H2[-1] 
 
-
-    W_shape = (D.shape[0], rank)
-    H_shape = (rank, D.shape[1])
+    
     logger.info('Initializing W and H...')
-    W = random_array(W_shape, filenames, seed_W)
-    H = random_array(H_shape, filenames, seed_H)
+    
+    W = random_array(((D.shape[0]-1), rank), filenames, seed_W)
+    W.sort(axis=0)
+    W = np.concatenate((np.zeros((1,rank)), W, np.ones((1,rank))))
+    W = np.array([W[i+1]-W[i] for i in range(W.shape[0]-1)])
+    try:
+        assert np.sum(np.sum(W,axis=0)==1)==rank
+    except AssertionError:
+        logger.critical('Assertion Error: W_initialization failed to have column sums of 1')
+        raise
+    
+    H = random_array((rank, D.shape[1]), filenames, seed_H)
     
     logger.info('W, H chosen')
 
@@ -138,17 +151,19 @@ def SNMF(dataframe, filenames, rank, beta = 0.1, threshold = 0.20, seed_W = None
         
 
         # Check for nonnegativity of W
-        try: assert(W_new.min()>0)
+        try: assert(W_new.min()>=0)
         except AssertionError:
             logger.critical('AssertionError: W is not nonnegative!')
-            logger.critical('%s out of %s entries of W are negative', np.sum(W_new <= 0), np.product(W_shape))
+            logger.critical('%s out of %s entries of W are negative', np.sum(W_new < 0), np.product(W_shape))
+            return pd.DataFrame(W), pd.DataFrame(H), results
             raise
 
         # Check for nonnegativity of H
-        try: assert(H_new.min()>0)
+        try: assert(H_new.min()>=0)
         except AssertionError:
             logger.critical('AssertionError: H is not nonnegative!')
-            logger.critical('%s out of %s entries of H are negative', np.sum(H_new <= 0), np.product(H_shape))
+            logger.critical('%s out of %s entries of H are negative', np.sum(H_new < 0), np.product(H_shape))
+            return pd.DataFrame(W), pd.DataFrame(H), results
             raise
 
         
@@ -172,7 +187,7 @@ def SNMF(dataframe, filenames, rank, beta = 0.1, threshold = 0.20, seed_W = None
                                   'W_min': W_min,
                                   'W_max': W_max,
                                   'sparsity': sparsity_metric(H),
-                                  'col_sum_mean': np.mean(np.sum(W,axis=0))}, ignore_index = True, )
+                                  'col_sum_mean': np.mean(np.sum(W,axis=0))}, ignore_index = True)
             
         
     W, H = sort_WH(W, H)
