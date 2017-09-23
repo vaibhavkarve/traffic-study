@@ -1,4 +1,6 @@
-''' This runs Phase1 on data using L1-normalization condition for W and also by taking into account the signs of lambda_n'''
+''' This contains functions for cSNMF.
+cSNMF uses L1-normalization condition for W and
+also takes into account the signs of lambda_n'''
 
 
 from read_data import replace_placeholder
@@ -85,33 +87,46 @@ def sparsity_metric(H):
     return sum([sparsity_column(i) for i in H.T])/np.product(H.shape)
 
 
-def SNMF(dataframe, filenames, rank, beta = 0.1, threshold = 0.20, seed_W = None, seed_H = None):    
+def factorize(dataframe, filenames, rank, beta = 0.1, threshold = 0.20, seed_W = None, seed_H = None, log=logger):    
 
-    logger.info('Rank= %s, Beta= %s, Threshold= %s', rank, beta, threshold)
+    log.info('Rank= %s, Beta= %s, Threshold= %s', rank, beta, threshold)
 
     D = dataframe.fillna(0.0)
     global NONZEROS
     NONZEROS = pd.notnull(dataframe)
+    JTT = np.ones((D.shape[0],D.shape[0]))
+    JRR = np.ones((rank,rank))
+    
     
     def update_W(D, W, H):
-        lambdas = d(W.T@(D - N(W@H))@H.T)  # This is a rank*rank matrix with only lambda_n on the diagonals
-        Term_1 = D@H.T - np.ones((len(D),len(D)))@W@np.select([lambdas < 0.], [lambdas])
-        Term_2 = N(W@H)@H.T + np.ones((len(D),len(D)))@W@np.select([lambdas >= 0.], [lambdas])
+        WH = N(W @ H)
+        DHT = D @ H.T
+        WHHT = WH @ H.T
+        JTTW = JTT @ W
+        
+        # This is a rank*rank matrix with only lambda_n on the diagonals
+        lambdas = 1./D.shape[0]*np.diag(np.sum(DHT - WHHT, axis=0)) 
+        #print(np.diag(lambdas[4:6,4:6]))
+        Term_1 = DHT - JTTW @ np.select([lambdas < 0.], [lambdas])
+        Term_2 = WHHT + JTTW @ np.select([lambdas >= 0.], [lambdas])
         W = m(m(W,Term_1), 1./(Term_2))
-        W = np.select([W > 10**(-30)], [W], default=10**(-30))    ## Bumping values back up to epsilon
+        #W = np.select([W > 10**(-30)], [W], default=10**(-30))    ## Bumping values back up to epsilon
         return W
 
+    
     def update_H(D, W, H):
-        Term_3 = W.T@D
-        Term_4 = W.T@N(W@H) + beta*np.ones((rank,rank))@H
+        WH = N(W @ H)
+        
+        Term_3 = W.T @ D
+        Term_4 = W.T @ WH + beta*JRR @ H
         H = m(m(H,Term_3), 1./Term_4)
-        H = np.select([H > 10**(-30)], [H], default=10**(-30))
+        #H = np.select([H > 10**(-30)], [H], default=10**(-30))
         return H
     
 
     def quartiles(H):
         H2 = sorted(H.flatten())
-        quarter = (rank*len(D.T)-1)//4
+        quarter = (rank*D.shape[1]-1)//4
         return H2[0], H2[quarter], H2[quarter*2], H2[quarter*3], H2[-1] 
 
     
@@ -124,74 +139,84 @@ def SNMF(dataframe, filenames, rank, beta = 0.1, threshold = 0.20, seed_W = None
     try:
         assert np.sum(np.sum(W,axis=0)==1)==rank
     except AssertionError:
-        logger.critical('Assertion Error: W_initialization failed to have column sums of 1')
+        log.critical('Assertion Error: W_initialization failed to have column sums of 1')
         raise
     
     H = random_array((rank, D.shape[1]), filenames, seed_H)
     
-    logger.info('W, H chosen')
+    log.info('W, H chosen')
 
     iterations = 0
-    results = pd.DataFrame({'quarts': [], # list of quartiles of H for each iteration
-                            'diff_W': [],
-                            'diff_H': [],
-                            'error': [],
-                            'W_min': [],
-                            'W_max': [],
-                            'sparsity': [],
-                            'col_sum_mean': []})
+    results = pd.DataFrame()
     diff_W = 100
     diff_H = 100
     
     D = D.values # DataFrame to numpy.array
+    norm_D = lin.norm(D)
     
     while abs(diff_W) + abs(diff_H) > threshold or iterations<200:
         W_new = update_W(D, W, H)
         H_new = update_H(D, W_new, H)
         
+        #print(np.sum(W_new[:,4]))
+        try: assert(np.sum(W_new,axis=0).max()<1.2 and np.sum(W_new,axis=0).min()>0.8)
+        except AssertionError:
+            pass
+            #log.critical('AssertionError: W col_sum out of range!')
+            #log.critical('W col_sum = %s max and %s min', np.sum(W_new,axis=0).max(), np.sum(W_new,axis=0).min())
+            #np.savetxt('./Debug/W_new.csv', W_new, delimiter=',')
+            #np.savetxt('./Debug/H_new.csv', H_new, delimiter=',')
+            #np.savetxt('./Debug/W.csv', W, delimiter=',')
+            #np.savetxt('./Debug/H.csv', H, delimiter=',')
+            #return pd.DataFrame(W), pd.DataFrame(H), results
+            #raise
+        
+        #if iterations>125:
+        #    from IPython.core.debugger import Tracer
+        #    Tracer()()
 
         # Check for nonnegativity of W
         try: assert(W_new.min()>=0)
         except AssertionError:
-            logger.critical('AssertionError: W is not nonnegative!')
-            logger.critical('%s out of %s entries of W are negative', np.sum(W_new < 0), np.product(W_shape))
+            log.critical('AssertionError: W is not nonnegative!')
+            log.critical('%s out of %s entries of W are negative', np.sum(W_new < 0), np.product(W.shape))
             return pd.DataFrame(W), pd.DataFrame(H), results
             raise
 
         # Check for nonnegativity of H
         try: assert(H_new.min()>=0)
         except AssertionError:
-            logger.critical('AssertionError: H is not nonnegative!')
-            logger.critical('%s out of %s entries of H are negative', np.sum(H_new < 0), np.product(H_shape))
+            log.critical('AssertionError: H is not nonnegative!')
+            log.critical('%s out of %s entries of H are negative', np.sum(H_new < 0), np.product(H.shape))
             return pd.DataFrame(W), pd.DataFrame(H), results
             raise
 
         
-        W_min = W_new.min()
-        W_max = W_new.max()
         diff_W = lin.norm(W_new - W)/lin.norm(W)*100
         diff_H = lin.norm(H_new - H)/lin.norm(H)*100
 
         W, H = W_new, H_new
 
         # We calculate the relative error in percentage.
-        error = lin.norm(D - N(W@H))/lin.norm(D)*100
+        error = lin.norm(D - N(W@H))/norm_D*100
+        sparsity = sparsity_metric(H)
         
-        logger.info('Iteration= %s, Error= %s', iterations, error)
+        log.info('Iteration= %s, Error= %s', iterations, error)
         iterations += 1
-        
+            
         results = results.append({'quarts': quartiles(H),
+                                  'W_min': W.min(),
+                                  'W_max': W.max(),
                                   'diff_W': diff_W,
                                   'diff_H': diff_H,
                                   'error': error,
-                                  'W_min': W_min,
-                                  'W_max': W_max,
-                                  'sparsity': sparsity_metric(H),
-                                  'col_sum_mean': np.mean(np.sum(W,axis=0))}, ignore_index = True)
+                                  'sparsity': sparsity,
+                                  'col_sum_mean': np.mean(np.sum(W,axis=0))
+                                  }, ignore_index = True)
             
         
-    W, H = sort_WH(W, H)
-            
+    # W, H = sort_WH(W, H)
+    log.info('Sparsity= %s', sparsity)
     return pd.DataFrame(W), pd.DataFrame(H), results
 
 
